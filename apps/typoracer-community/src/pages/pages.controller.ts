@@ -18,7 +18,15 @@ export class PagesController {
   @Get('leaderboard')
   @Render('leaderboard')
   getLeaderboard() {
-    return { currentPath: '/leaderboard', title: 'Generic Leaderboard' };
+    return {
+      currentPath: '/leaderboard',
+      title: 'Generic Leaderboard',
+      users: [
+        { name: 'SpeedyFox', wpm: 102, acc: 99 },
+        { name: 'KeyMaster', wpm: 97, acc: 96 },
+        { name: 'SwiftType', wpm: 93, acc: 95 },
+      ],
+    };
   }
 
   @Get('quote-submission')

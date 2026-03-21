@@ -11,24 +11,14 @@
             </tr>
             </thead>
             <tbody class="leaderboard__body">
-            <tr class="leaderboard__row">
-                <td class="leaderboard__cell">1</td>
-                <td class="leaderboard__cell">SpeedyFox</td>
-                <td class="leaderboard__cell">102</td>
-                <td class="leaderboard__cell">99%</td>
-            </tr>
-            <tr class="leaderboard__row">
-                <td class="leaderboard__cell">2</td>
-                <td class="leaderboard__cell">KeyMaster</td>
-                <td class="leaderboard__cell">97</td>
-                <td class="leaderboard__cell">96%</td>
-            </tr>
-            <tr class="leaderboard__row">
-                <td class="leaderboard__cell">3</td>
-                <td class="leaderboard__cell">SwiftType</td>
-                <td class="leaderboard__cell">93</td>
-                <td class="leaderboard__cell">95%</td>
-            </tr>
+            <% users.forEach((user, index) => { %>
+                <tr class="leaderboard__row">
+                    <td class="leaderboard__cell"><%= index + 1 %></td>
+                    <td class="leaderboard__cell"><%= user.name %></td>
+                    <td class="leaderboard__cell"><%= user.wpm %></td>
+                    <td class="leaderboard__cell"><%= user.acc %>%</td>
+                </tr>
+            <% }) %>
             </tbody>
         </table>
         <blockquote class="competition__quote" cite="https://techhelp.ca/quotes-on-competition/">
