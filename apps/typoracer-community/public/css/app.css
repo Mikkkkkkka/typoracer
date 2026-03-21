@@ -1,0 +1,384 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+html {
+    font-family: 'Google Sans Code', monospace;
+}
+
+body {
+    background-color: #333;
+    color: white;
+    margin: 0;
+}
+
+a {
+    color: #aaa;
+}
+
+p {
+    font-size: clamp(1rem, 4%, 3rem);
+}
+
+.separator {
+    margin-bottom: 6rem;
+}
+
+.main-header {
+    font-size: 1rem;
+    line-height: 1rem;
+
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: space-between;
+
+    background-color: #222;
+    border-radius: 1rem;
+
+    box-shadow: 2px 2px 2px black;
+
+    padding: 3%;
+
+    position: sticky;
+    top: 20px;
+}
+
+.margined {
+    margin: 2%;
+}
+
+.logo {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.logo__image {
+    width: 3rem;
+    height: 3rem;
+
+    margin-bottom: 10px;
+}
+
+.logo__text {
+    font-size: 2rem;
+}
+
+.nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.nav-bar__link {
+    text-transform: capitalize;
+    font-weight: 700;
+}
+
+.nav-bar__link:hover {
+    color: #fff;
+    transition: 200ms ease-out;
+}
+
+.nav-bar__link--active {
+    text-transform: uppercase;
+    font-weight: 1000;
+}
+
+.user-info {
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.user-info__username {
+    text-transform: capitalize;
+}
+
+.user-info__image {
+    width: 2rem;
+    height: 2rem;
+}
+
+input[type='text'] {
+    font-family: inherit;
+    background-color: #222;
+    color: white;
+}
+
+.typing-test {
+    width: 90%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 3%;
+    padding-left: 2%;
+    padding-right: 2%;
+    padding-top: 26vh;
+    padding-bottom: 26vh;
+}
+
+.typing-test__word-counter {
+    font-size: 1.5rem;
+}
+
+.typing-test__input {
+    font-size: 1.5rem;
+    line-height: 1rem;
+    width: 100%;
+    height: 2rem;
+
+    background-color: #222;
+    letter-spacing: 0.2rem;
+
+    border-radius: 5px;
+
+    padding: 5px;
+}
+
+.typing-test__placeholder {
+    align-self: center;
+    margin-top: 5rem;
+    text-decoration: line-through;
+    font-style: italic;
+    color: #aaa;
+}
+
+.typing-test__placeholder:hover {
+    text-decoration: underline;
+}
+
+.text-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.text-section__paragraph {
+    max-width: 50rem;
+}
+
+.list {}
+
+.list__item {
+    max-width: 30rem;
+}
+
+.text-section__grid {
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: space-between;
+    gap: 4rem;
+
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+}
+
+.card {
+    padding: 1rem;
+    border-color: white;
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 5px;
+}
+
+.card__image {
+    width: 300px;
+    height: 300px;
+}
+
+.card__text {
+    font-size: 10px;
+}
+
+.competition-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.competition__quote {
+    text-align: end;
+    background-color: #222;
+    border-radius: 2rem;
+    max-width: 350px;
+    padding: 2rem;
+}
+
+.leaderboard {
+    width: 100%;
+}
+
+.leaderboard,
+.leaderboard__header,
+.leaderboard__cell {
+    border: 1px solid white;
+    border-collapse: collapse;
+    padding: 0.75rem;
+    text-align: center;
+}
+
+.leaderboard__head {
+    background-color: white;
+    color: #333;
+}
+
+.leaderboard__row:nth-child(odd) {
+    background-color: #555;
+}
+
+.leaderboard__row:nth-child(even) {
+    background-color: #777;
+}
+
+.leaderboard__header--wide {
+    min-width: 300px;
+}
+
+.leaderboard__placeholder {
+    display: none;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    font-style: italic;
+    color: #aaa;
+    animation: leaderboard-spin 2.5s linear infinite;
+    transform-origin: center;
+}
+
+@keyframes leaderboard-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.main-footer {
+    font-size: 1rem;
+    line-height: 1rem;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    background-color: #222;
+    border-radius: 1rem;
+
+    box-shadow: 2px 2px 2px black;
+
+    padding: 3%;
+}
+
+.main-footer__load-metrics {
+    color: #333;
+}
+
+.main-footer__image {
+    width: 8rem;
+    height: 8rem;
+}
+
+.generic-form__form-container {
+    display: flex;
+    flex-direction: column;
+    align-items: first baseline;
+    justify-content: space-between;
+}
+
+.form-container__label {
+    margin-bottom: 1rem;
+}
+
+textarea {
+    background-color: #222;
+    color: white;
+    font-family: inherit;
+}
+
+.form-container__textarea {
+    width: 600px;
+    height: 200px;
+    margin-bottom: 2rem;
+}
+
+.form-container__text-input {
+    width: 300px;
+    margin-bottom: 2rem;
+}
+
+.quote-submissions-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.quote-submissions {
+    width: 100%;
+}
+
+.quote-submissions,
+.quote-submissions__header,
+.quote-submissions__cell {
+    border: 1px solid white;
+    border-collapse: collapse;
+    padding: 0.75rem;
+    text-align: center;
+}
+
+.quote-submissions__head {
+    background-color: white;
+    color: #333;
+}
+
+.quote-submissions__row:nth-child(odd) {
+    background-color: #555;
+}
+
+.quote-submissions__row:nth-child(even) {
+    background-color: #777;
+}
+
+.quote-submissions__header--wide {
+    min-width: 300px;
+}
+
+@media (max-width: 1023px) {
+    .logo__image {
+        display: none;
+    }
+
+    .nav-bar {
+        display: none;
+    }
+
+    .text-section__grid {
+        grid-auto-flow: row;
+    }
+
+    .card__image {
+        max-width: 100%;
+    }
+
+    .main-footer__image {
+        display: none;
+    }
+}
+
+@media (max-width: 700px) {
+    .hide-on-tiny {
+        display: none;
+    }
+}
