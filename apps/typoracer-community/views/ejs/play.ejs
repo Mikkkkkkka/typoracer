@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/assets/keyboard-icon.svg" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <title><%= title %></title>
+</head>
+<body>
+<div class="app">
+    <%- include('partials/header') %>
+    <main>
+        <section class="typing-test margined">
+            <span class="typing-test__word-counter">0/10</span>
+            <br />
+            <input
+                class="typing-test__input"
+                type="text"
+                placeholder="Eat some more of these soft French rolls and drink some tea."
+            />
+            <a class="typing-test__placeholder" href="/quote-submission">
+                Bored of plating the same quotes?
+            </a>
+        </section>
+        <div class="separator"></div>
+    </main>
+    <%- include('partials/footer') %>
+</div>
+</body>
+</html>
