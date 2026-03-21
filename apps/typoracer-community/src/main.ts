@@ -9,7 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   const publicPath = join(__dirname, '..', 'public');
-  const viewsPath = join(__dirname, '..', 'views', 'ejs');
+  const viewsPath = join(__dirname, '..', 'views');
 
   app.useStaticAssets(publicPath);
   app.setBaseViewsDir(viewsPath);
