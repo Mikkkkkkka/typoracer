@@ -1,0 +1,62 @@
+{{#> main}}
+    <section class="text-section">
+        <h1>Submit your quote!</h1>
+        <p>
+            Enter a quote you want to be added to the public quote list, and if it goes through
+            moderation it will be added!
+        </p>
+    </section>
+    <div class="separator"></div>
+    <section class="text-section">
+        <form class="generic-form" id="quote-form" action="#" method="post">
+            <div class="generic-form__form-container">
+                <label class="form-container__label" for="quote-text">Enter quote text:</label>
+                <textarea class="form-container__textarea" id="quote-text" name="quote-text"
+                          placeholder="The quick brown fox..." required minlength="3" maxlength="500">
+                </textarea>
+                <label class="form-container__label" for="quote-source">
+                    Enter quote source: (Optional)
+                </label>
+                <input class="form-container__text-input" type="text" name="quote-source" id="quote-source"
+                       placeholder="(Unknown)" maxlength="100"/>
+                <p class="form-container__error" id="quote-form-error" role="alert" aria-live="polite">
+                    Submissions are stored locally in the future version.
+                </p>
+                <button type="submit" class="form-container__clear-button" id="clear-form">
+                    Submit!
+                </button>
+            </div>
+        </form>
+    </section>
+    <div class="separator"></div>
+    <section class="quote-submissions-section">
+        <h1>Your submissions:</h1>
+        <table class="quote-submissions" id="quote-submissions">
+            <thead class="quote-submissions__head">
+            <tr>
+                <th class="quote-submissions__header">#</th>
+                <th class="quote-submissions__header">Submitted at</th>
+                <th class="quote-submissions__header--wide">Quote</th>
+                <th class="quote-submissions__header">Source</th>
+                <th class="quote-submissions__header">Edit</th>
+                <th class="quote-submissions__header">Delete</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr class="quote-submissions__row">
+                <td class="quote-submissions__cell">-</td>
+                <td class="quote-submissions__cell">-</td>
+                <td class="quote-submissions__cell">No submissions yet.</td>
+                <td class="quote-submissions__cell">-</td>
+                <td class="quote-submissions__cell">
+                    <button type="button" class="quote-submission-edit" disabled>Edit</button>
+                </td>
+                <td class="quote-submissions__cell">
+                    <button type="button" class="quote-submission-delete" disabled>Delete</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+    <div class="separator"></div>
+{{/main}}

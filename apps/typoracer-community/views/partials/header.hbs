@@ -1,0 +1,24 @@
+<header class="main-header margined">
+    <div class="logo">
+        <img class="logo__image" src="/assets/keyboard-icon.svg" alt="Keyboard"/>
+        <span class="logo__text">
+            Generic Typing <span class="hide-on-tiny">Test</span>
+        </span>
+    </div>
+    <nav class="nav-bar">
+        <a class="nav-bar__link {{#if (eq currentPath "/")}}nav-bar__link--active{{/if}}" href="/">
+            home
+        </a>
+        <a class="nav-bar__link {{#if (eq currentPath "/play")}}nav-bar__link--active{{/if}}" href="/play">
+            play
+        </a>
+        <a class="nav-bar__link {{#if (eq currentPath "/leaderboard")}}nav-bar__link--active{{/if}}"
+           href="/leaderboard">
+            leaderboard
+        </a>
+    </nav>
+    <div class="user-info">
+        <span class="user-info__username">guest</span>
+        <img class="user-info__image" src="/assets/user-icon.svg" alt="User"/>
+    </div>
+</header>
