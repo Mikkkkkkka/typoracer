@@ -5,54 +5,52 @@
     <title><%= title %></title>
 </head>
 <body>
-<div class="app">
-    <%- include('partials/header') %>
-    <main>
-        <section class="text-section" id="why-section">
-            <h1>Why type fast?</h1>
-            <p class="text-section__paragraph">
-                Keyboards existed for much longer than you think they did. As well as typing
-                bla-bla-bla-bla-bla-bla-bla. Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                Hic numquam voluptatem officiis adipisci repellendus fuga praesentium maiores voluptas
-                ad id, laboriosam inventore harum iste quisquam tempore, cum ducimus? Corrupti, non?
-            </p>
-            <div class="text-section__grid grid">
-                <div class="grid__card card">
-                    <img class="card__image" src="/assets/typewriter.jpg" alt="Old keyboard" />
-                    <p class="card__text">Old Keyboard</p>
-                </div>
-                <div class="grid__card card">
-                    <img class="card__image" src="/assets/mechanical-keyboard.webp" alt="Modern keyboard" />
-                    <p class="card__text">Modern Keyboard</p>
-                </div>
-                <div class="grid__card card">
-                    <img class="card__image" src="/assets/an-image.jpg" alt="Generic" />
-                    <p class="card__text">An image with description</p>
-                </div>
+<%- include('partials/header') %>
+<main>
+    <section class="text-section" id="why-section">
+        <h1>Why type fast?</h1>
+        <p class="text-section__paragraph">
+            Keyboards existed for much longer than you think they did. As well as typing
+            bla-bla-bla-bla-bla-bla-bla. Lorem ipsum dolor sit amet consectetur adipisicing elit.
+            Hic numquam voluptatem officiis adipisci repellendus fuga praesentium maiores voluptas
+            ad id, laboriosam inventore harum iste quisquam tempore, cum ducimus? Corrupti, non?
+        </p>
+        <div class="text-section__grid grid">
+            <div class="grid__card card">
+                <img class="card__image" src="/assets/typewriter.jpg" alt="Old keyboard"/>
+                <p class="card__text">Old Keyboard</p>
             </div>
-            <ul class="text-section__list list">
-                <li class="list__item">You can brag about it online!</li>
-                <li class="list__item">You can finish essays quicker!</li>
-                <li class="list__item">You can make better notes from lectures!</li>
-                <li class="list__item">You can perform better in programming competitions!</li>
-            </ul>
-        </section>
-        <div class="separator"></div>
-        <section class="text-section">
-            <h1>How do I type faster?</h1>
-            <ol class="text-section__list list">
-                <li class="list__item">Use <i>all 10</i> of your fingers.</li>
-                <li class="list__item">
-                    Keep your fingers at the <i>home row of the keyboard</i> in between pressing keys.
-                </li>
-                <li class="list__item">Use your <i>pinkies</i>!</li>
-                <li class="list__item"><i>Remember </i> the location of every key on the keyboard.</li>
-                <li class="list__item"><i>Speed up</i> your pace!</li>
-            </ol>
-        </section>
-        <div class="separator"></div>
-    </main>
-    <%- include('partials/footer') %>
-</div>
+            <div class="grid__card card">
+                <img class="card__image" src="/assets/mechanical-keyboard.webp" alt="Modern keyboard"/>
+                <p class="card__text">Modern Keyboard</p>
+            </div>
+            <div class="grid__card card">
+                <img class="card__image" src="/assets/an-image.jpg" alt="Generic"/>
+                <p class="card__text">An image with description</p>
+            </div>
+        </div>
+        <ul class="text-section__list list">
+            <li class="list__item">You can brag about it online!</li>
+            <li class="list__item">You can finish essays quicker!</li>
+            <li class="list__item">You can make better notes from lectures!</li>
+            <li class="list__item">You can perform better in programming competitions!</li>
+        </ul>
+    </section>
+    <div class="separator"></div>
+    <section class="text-section">
+        <h1>How do I type faster?</h1>
+        <ol class="text-section__list list">
+            <li class="list__item">Use <i>all 10</i> of your fingers.</li>
+            <li class="list__item">
+                Keep your fingers at the <i>home row of the keyboard</i> in between pressing keys.
+            </li>
+            <li class="list__item">Use your <i>pinkies</i>!</li>
+            <li class="list__item"><i>Remember </i> the location of every key on the keyboard.</li>
+            <li class="list__item"><i>Speed up</i> your pace!</li>
+        </ol>
+    </section>
+    <div class="separator"></div>
+</main>
+<%- include('partials/footer') %>
 </body>
 </html>
