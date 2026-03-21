@@ -22,7 +22,9 @@
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^11.0.1",
+    "hbs": "^4.2.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -33,6 +35,7 @@
     "@nestjs/schematics": "^11.0.9",
     "@nestjs/testing": "^11.0.1",
     "@types/express": "^5.0.0",
+    "@types/hbs": "^4.0.5",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
