@@ -122,11 +122,7 @@ input[type='text'] {
     flex-direction: column;
     align-items: center;
 
-    padding: 3%;
-    padding-left: 2%;
-    padding-right: 2%;
-    padding-top: 26vh;
-    padding-bottom: 26vh;
+    padding: 26vh 2%;
 }
 
 .typing-test__word-counter {
@@ -208,7 +204,7 @@ input[type='text'] {
     align-items: center;
 }
 
-.competition__quote {
+.competition-section__quote {
     text-align: end;
     background-color: #222;
     border-radius: 2rem;
@@ -223,7 +219,8 @@ input[type='text'] {
 .leaderboard,
 .leaderboard__header,
 .leaderboard__cell {
-    border: 1px solid white;
+    /*border: 1px solid white;*/
+    border-radius: 3rem;
     border-collapse: collapse;
     padding: 0.75rem;
     text-align: center;
@@ -291,14 +288,14 @@ input[type='text'] {
     height: 8rem;
 }
 
-.generic-form__form-container {
+.generic-form__container {
     display: flex;
     flex-direction: column;
     align-items: first baseline;
     justify-content: space-between;
 }
 
-.form-container__label {
+.generic-form__label {
     margin-bottom: 1rem;
 }
 
@@ -308,13 +305,13 @@ textarea {
     font-family: inherit;
 }
 
-.form-container__textarea {
+.generic-form__textarea {
     width: 600px;
     height: 200px;
     margin-bottom: 2rem;
 }
 
-.form-container__text-input {
+.generic-form__text-input {
     width: 300px;
     margin-bottom: 2rem;
 }
@@ -332,7 +329,7 @@ textarea {
 .quote-submissions,
 .quote-submissions__header,
 .quote-submissions__cell {
-    border: 1px solid white;
+    /*border: 1px solid white;*/
     border-collapse: collapse;
     padding: 0.75rem;
     text-align: center;
@@ -353,6 +350,16 @@ textarea {
 
 .quote-submissions__header--wide {
     min-width: 300px;
+}
+
+.quote-submissions__action-button {
+    font: inherit;
+    padding: 0.4rem 0.8rem;
+}
+
+.quote-submissions__action-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 @media (max-width: 1023px) {
