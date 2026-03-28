@@ -1,11 +1,11 @@
-<main>
+<main class="page-content">
     <section class="competition-section margined" id="competition-section">
         <h1>Leaderboard</h1>
         <table class="leaderboard" id="leaderboard-table">
             <thead class="leaderboard__head">
             <tr>
                 <th class="leaderboard__header">#</th>
-                <th class="leaderboard__header leaderboard__header--wide">Name</th>
+                <th class="leaderboard__header">Name</th>
                 <th class="leaderboard__header">Avg. WPM</th>
                 <th class="leaderboard__header">Avg. Acc</th>
             </tr>
@@ -14,7 +14,9 @@
             <% users.forEach((user, index) => { %>
                 <tr class="leaderboard__row">
                     <td class="leaderboard__cell"><%= index + 1 %></td>
-                    <td class="leaderboard__cell"><%= user.name %></td>
+                    <td class="leaderboard__cell">
+                        <a href="/users/<%= user.name %>"><%= user.name %></a>
+                    </td>
                     <td class="leaderboard__cell"><%= user.wpm %></td>
                     <td class="leaderboard__cell"><%= user.acc %>%</td>
                 </tr>

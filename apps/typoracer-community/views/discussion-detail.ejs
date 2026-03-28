@@ -1,0 +1,49 @@
+<main class="page-content">
+    <section class="discussion-section">
+        <p class="discussion-section__back"><a href="/forums">Back to forums</a></p>
+        <article class="card discussion-card">
+            <p class="discussion-card__meta">Started by <a href="/users/<%= discussion.author %>"><%= discussion.author %></a></p>
+            <h1><%= discussion.title %></h1>
+            <p><%= discussion.body %></p>
+        </article>
+        <% if (currentUser) { %>
+        <form
+            class="card discussion-reply-form"
+            id="discussion-reply-form"
+            data-discussion-id="<%= discussion.id %>"
+            data-current-user="<%= currentUser %>"
+        >
+            <h2>Post a reply</h2>
+            <p class="discussion-reply-form__signed-in">Replying as <a href="/users/<%= currentUser %>"><%= currentUser %></a></p>
+            <label class="discussion-reply-form__label" for="reply-text">Reply</label>
+            <textarea
+                class="discussion-reply-form__textarea"
+                id="reply-text"
+                name="text"
+                maxlength="400"
+                placeholder="Write something useful."
+                required
+            ></textarea>
+            <p class="discussion-reply-form__status" id="discussion-reply-status" role="status" aria-live="polite"></p>
+            <button class="discussion-reply-form__submit" type="submit">Post reply</button>
+        </form>
+        <% } else { %>
+        <div class="card discussion-reply-form discussion-reply-form--disabled">
+            <h2>Post a reply</h2>
+            <p class="discussion-reply-form__status">You need to be logged in to reply to this discussion.</p>
+        </div>
+        <% } %>
+        <div class="discussion-replies">
+            <h2>Replies</h2>
+            <div id="discussion-replies-list">
+            <% discussion.replies.forEach((reply) => { %>
+                <article class="card discussion-reply">
+                    <p class="discussion-reply__author"><a href="/users/<%= reply.author %>"><%= reply.author %></a></p>
+                    <p><%= reply.text %></p>
+                </article>
+            <% }) %>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="/js/discussion-replies.js"></script>
