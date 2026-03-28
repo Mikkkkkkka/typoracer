@@ -6,7 +6,7 @@ export class PagesController {
   @Get()
   @Render('home')
   getHome() {
-    return { currentPath: '/', title: 'Generic Typing Test' };
+    return { currentPath: '/', title: 'Typoracer Community' };
   }
 
   @Get('leaderboard')
@@ -14,7 +14,7 @@ export class PagesController {
   getLeaderboard() {
     return {
       currentPath: '/leaderboard',
-      title: 'Generic Leaderboard',
+      title: 'Typoracer Leaderboard',
       users: [
         { name: 'SpeedyFox', wpm: 102, acc: 99 },
         { name: 'KeyMaster', wpm: 97, acc: 96 },
@@ -28,7 +28,7 @@ export class PagesController {
   getQuoteSubmission() {
     return {
       currentPath: '/quote-submission',
-      title: 'Generic Quote Submission',
+      title: 'Typoracer Quote submission',
     };
   }
 
@@ -36,7 +36,7 @@ export class PagesController {
   getNotFound(@Res() res: express.Response) {
     return res.status(404).render('not-found', {
       currentPath: '',
-      title: 'Generic Page Not Found',
+      title: 'Page Not Found',
     });
   }
 }
