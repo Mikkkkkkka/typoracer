@@ -185,6 +185,19 @@ input[type='text'] {
     justify-content: space-between;
     gap: 4rem;
 
+    grid-template-columns: repeat(auto-fill, 3fr);
+    grid-template-rows: repeat(auto-fill, 3fr);
+
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+}
+
+.quote-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-flow: row;
+    gap: 1.5rem;
+    align-items: start;
     margin-top: 3rem;
     margin-bottom: 3rem;
 }
@@ -195,6 +208,12 @@ input[type='text'] {
     border-style: solid;
     border-width: 1px;
     border-radius: 5px;
+}
+
+.card-link {
+    color: inherit;
+    text-decoration: none;
+    display: block;
 }
 
 .card__image {
@@ -370,6 +389,173 @@ textarea {
     opacity: 0.6;
 }
 
+.quote-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.search-box {
+    width: min(100%, 42rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: linear-gradient(180deg, #2a2a2a, #1f1f1f);
+    border: 1px solid #4a4a4a;
+    border-radius: 1rem;
+    box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.25);
+    padding: 1rem 1.25rem;
+}
+
+.search-box__label {
+    color: #d7d7d7;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.search-box__input {
+    width: 100%;
+    background-color: #151515;
+    color: white;
+    font: inherit;
+    border: 1px solid #5c5c5c;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    outline: none;
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.search-box__input::placeholder {
+    color: #8d8d8d;
+}
+
+.search-box__input:focus {
+    border-color: #f0f0f0;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.12);
+}
+
+.forums-section,
+.discussion-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.forums-list,
+.discussion-replies {
+    width: min(100%, 60rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 2rem 0 3rem;
+}
+
+.forum-thread__card,
+.discussion-card,
+.discussion-reply {
+    background-color: #222;
+}
+
+.forum-thread__title {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.forum-thread__meta,
+.discussion-card__meta,
+.discussion-reply__author {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.forum-thread__excerpt,
+.discussion-section__back {
+    margin: 0;
+}
+
+.discussion-card {
+    width: min(100%, 60rem);
+    margin-top: 2rem;
+}
+
+.discussion-reply-form {
+    width: min(100%, 60rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background-color: #222;
+    margin-top: 1.5rem;
+}
+
+.discussion-reply-form--disabled {
+    opacity: 0.85;
+}
+
+.discussion-reply-form__label {
+    color: #d7d7d7;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.discussion-reply-form__signed-in {
+    color: #d7d7d7;
+    margin: 0;
+}
+
+.discussion-reply-form__input,
+.discussion-reply-form__textarea {
+    width: 100%;
+    background-color: #151515;
+    color: white;
+    font: inherit;
+    border: 1px solid #5c5c5c;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    outline: none;
+}
+
+.discussion-reply-form__textarea {
+    min-height: 8rem;
+    resize: vertical;
+}
+
+.discussion-reply-form__input:focus,
+.discussion-reply-form__textarea:focus {
+    border-color: #f0f0f0;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.12);
+}
+
+.discussion-reply-form__submit {
+    align-self: flex-start;
+    background-color: white;
+    color: #222;
+    font: inherit;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    padding: 0.7rem 1.1rem;
+}
+
+.discussion-reply-form__status {
+    min-height: 1.2rem;
+    color: #aaa;
+    margin: 0;
+}
+
+.discussion-replies h2 {
+    margin-bottom: 0;
+}
+
+#discussion-replies-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
 @media (max-width: 1023px) {
     .logo__image {
         display: none;
@@ -383,6 +569,10 @@ textarea {
         grid-auto-flow: row;
     }
 
+    .quote-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .card__image {
         max-width: 100%;
     }
@@ -393,6 +583,14 @@ textarea {
 }
 
 @media (max-width: 700px) {
+    .search-box {
+        padding: 0.9rem 1rem;
+    }
+
+    .quote-grid {
+        grid-template-columns: 1fr;
+    }
+
     .hide-on-tiny {
         display: none;
     }

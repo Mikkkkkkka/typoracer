@@ -9,12 +9,6 @@ export class PagesController {
     return { currentPath: '/', title: 'Generic Typing Test' };
   }
 
-  @Get('play')
-  @Render('play')
-  getPlay() {
-    return { currentPath: '/play', title: 'Play Typing Test' };
-  }
-
   @Get('leaderboard')
   @Render('leaderboard')
   getLeaderboard() {
