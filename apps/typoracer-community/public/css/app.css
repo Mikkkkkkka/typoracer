@@ -54,6 +54,7 @@ p {
 
     position: sticky;
     top: 20px;
+    z-index: 10;
 }
 
 .margined {
@@ -247,7 +248,7 @@ input[type='text'] {
 }
 
 .leaderboard__header--wide {
-    min-width: 300px;
+    min-width: 100px;
 }
 
 .leaderboard__placeholder {
