@@ -3,7 +3,7 @@
         <h1>Forums</h1>
         <div class="forums-list">
             <% discussions.forEach((discussion) => { %>
-                <article class="card forum-thread__card">
+                <article class="card forum-thread">
                     <p class="forum-thread__meta">Started by <a href="/users/<%= discussion.author %>"><%= discussion.author %></a></p>
                     <h2 class="forum-thread__title"><a class="card-link" href="/forums/<%= discussion.id %>"><%= discussion.title %></a></h2>
                     <p class="forum-thread__excerpt"><a class="card-link" href="/forums/<%= discussion.id %>"><%= discussion.excerpt %></a></p>
