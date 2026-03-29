@@ -35,7 +35,7 @@
         <% } %>
         <div class="discussion-replies">
             <h2>Replies</h2>
-            <div id="discussion-replies-list">
+            <div class="discussion-replies__list">
             <% discussion.replies.forEach((reply) => { %>
                 <article class="card discussion-reply">
                     <p class="discussion-reply__author"><a href="/users/<%= reply.author %>"><%= reply.author %></a></p>
