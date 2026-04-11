@@ -1,25 +1,21 @@
 <main class="page-content">
-    <section class="text-section">
-        <h1>Submit your quote!</h1>
+    <section class="page-section text-section page-section--narrow">
+        <h1>Submit your quote</h1>
         <p>
-            Enter a quote you want to be added to the public quote list, and if it goes through
-            moderation it will be added!
+            Add a quote for moderation. Until server storage is added, submissions are kept locally in your browser.
         </p>
     </section>
-    <div class="separator"></div>
-    <section class="text-section">
+    <section class="page-section">
         <form class="generic-form" id="quote-form" action="#" method="post">
             <div class="generic-form__container">
-                <label class="generic-form__label" for="quote-text">Enter quote text:</label>
+                <label class="generic-form__label" for="quote-text">Quote text</label>
                 <textarea class="generic-form__textarea" id="quote-text" name="quote-text"
                           placeholder="The quick brown fox..." required minlength="3" maxlength="500"></textarea>
-                <label class="generic-form__label" for="quote-source">
-                    Enter quote source: (Optional)
-                </label>
+                <label class="generic-form__label" for="quote-source">Source (optional)</label>
                 <input class="generic-form__text-input" type="text" name="quote-source" id="quote-source"
-                       placeholder="(Unknown)" maxlength="100"/>
+                       placeholder="Unknown" maxlength="100"/>
                 <p class="generic-form__error" id="quote-form-error" role="alert" aria-live="polite">
-                    Submissions are stored locally in the future version.
+                    Submissions are stored locally for now.
                 </p>
                 <button type="submit" class="generic-form__submit-button" id="clear-form">
                     Submit!
@@ -27,9 +23,8 @@
             </div>
         </form>
     </section>
-    <div class="separator"></div>
-    <section class="quote-submissions-section">
-        <h1>Your submissions:</h1>
+    <section class="page-section quote-submissions-section">
+        <h2>Your submissions</h2>
         <table class="quote-submissions" id="quote-submissions">
             <thead class="quote-submissions__head">
             <tr>
@@ -56,6 +51,20 @@
             </tr>
             </tbody>
         </table>
+        <template id="quote-submission-row-template">
+            <tr class="quote-submissions__row">
+                <td class="quote-submissions__cell" data-field="id"></td>
+                <td class="quote-submissions__cell" data-field="date"></td>
+                <td class="quote-submissions__cell" data-field="text"></td>
+                <td class="quote-submissions__cell" data-field="source"></td>
+                <td class="quote-submissions__cell">
+                    <button type="button" class="quote-submissions__action-button" data-action="edit">Edit</button>
+                </td>
+                <td class="quote-submissions__cell">
+                    <button type="button" class="quote-submissions__action-button" data-action="delete">Delete</button>
+                </td>
+            </tr>
+        </template>
     </section>
-    <div class="separator"></div>
 </main>
+<script src="/js/quote-submission.js"></script>

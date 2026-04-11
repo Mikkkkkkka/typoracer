@@ -1,17 +1,19 @@
 <main class="page-content">
-    <section class="discussion-section">
-        <article class="card discussion-card">
-            <p class="discussion-card__meta">Joined <%= user.joinedAt %></p>
-            <h1><%= user.username %></h1>
-            <p><%= user.bio %></p>
-        </article>
-        <div class="discussion-replies">
+    <section class="page-section discussion-section">
+        <div class="simple-columns">
+            <article class="card discussion-card">
+                <p class="discussion-card__meta">Joined <%= user.joinedAt %></p>
+                <h1><%= user.username %></h1>
+                <p><%= user.bio %></p>
+            </article>
             <article class="card discussion-reply">
                 <p class="discussion-reply__author">Typing stats</p>
                 <p>WPM: <%= user.stats.wpm %></p>
                 <p>Accuracy: <%= user.stats.accuracy %>%</p>
                 <p>Discussions started: <%= user.stats.discussions %></p>
             </article>
+        </div>
+        <div class="discussion-replies">
             <article class="card discussion-reply">
                 <p class="discussion-reply__author">Recent discussions</p>
                 <% if (userDiscussions.length === 0) { %>
