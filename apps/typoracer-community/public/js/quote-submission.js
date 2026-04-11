@@ -6,10 +6,8 @@ const MAX_QUOTE_SOURCE_LENGTH = 100;
 const quoteForm = document.getElementById('quote-form');
 const quoteText = document.getElementById('quote-text');
 const quoteSource = document.getElementById('quote-source');
-const clearFormBtn = document.getElementById('clear-form');
 const submissionsTable = document.getElementById('quote-submissions');
-const submissionsTableHeaders =
-  document.getElementById('quote-submissions').innerHTML;
+const submissionsTableBody = submissionsTable?.querySelector('tbody');
 const submissionRowTemplate = document.getElementById(
   'quote-submission-row-template',
 );
@@ -30,7 +28,6 @@ function setupEventListeners() {
 
 function handleFormSubmit(e) {
   e.preventDefault();
-  console.log('default prevented!');
 
   const formData = new FormData(quoteForm);
   const submissionInput = getSubmissionInputFromFormData(formData);
@@ -159,18 +156,25 @@ function clearForm() {
 }
 
 function loadSubmissions() {
-  const submissions = getSubmissions();
+  if (!(submissionsTableBody instanceof HTMLTableSectionElement)) {
+    return;
+  }
 
-  submissionsTable.innerHTML = submissionsTableHeaders;
+  const submissions = getSubmissions();
+  submissionsTableBody.innerHTML = '';
+
+  if (submissions.length === 0) {
+    submissionsTableBody.appendChild(createEmptySubmissionRow());
+    return;
+  }
 
   submissions.forEach((submission) => {
     const submissionElement = createSubmissionElement(submission);
-    submissionsTable.appendChild(submissionElement);
+    submissionsTableBody.appendChild(submissionElement);
   });
 }
 
 function createSubmissionElement(submission) {
-  console.log('creating the submission element: ' + JSON.stringify(submission));
   const tr = submissionRowTemplate.content.firstElementChild.cloneNode(true);
   tr.dataset.id = submission.id;
 
@@ -194,7 +198,7 @@ function createSubmissionElement(submission) {
 
   tr.querySelector('[data-field="id"]').textContent = submission.id;
   tr.querySelector('[data-field="date"]').innerHTML =
-    submission.createdAt !== submission.updateDate
+    submission.createdAt !== submission.updatedAt
       ? `<ul>${updatedDate}</ul>`
       : createdDate;
   tr.querySelector('[data-field="text"]').textContent = submission.text;
@@ -205,6 +209,25 @@ function createSubmissionElement(submission) {
 
   editButton.addEventListener('click', () => editSubmission(submission.id));
   deleteButton.addEventListener('click', () => deleteSubmission(submission.id));
+
+  return tr;
+}
+
+function createEmptySubmissionRow() {
+  const tr = document.createElement('tr');
+  tr.className = 'quote-submissions__row';
+  tr.innerHTML = `
+    <td class="quote-submissions__cell">-</td>
+    <td class="quote-submissions__cell">-</td>
+    <td class="quote-submissions__cell">No submissions yet.</td>
+    <td class="quote-submissions__cell">-</td>
+    <td class="quote-submissions__cell">
+      <button type="button" class="quote-submissions__action-button" disabled>Edit</button>
+    </td>
+    <td class="quote-submissions__cell">
+      <button type="button" class="quote-submissions__action-button" disabled>Delete</button>
+    </td>
+  `;
 
   return tr;
 }

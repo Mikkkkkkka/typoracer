@@ -1,5 +1,5 @@
 <main class="page-content">
-    <section class="discussion-section">
+    <section class="page-section discussion-section">
         <p class="discussion-section__back"><a href="/forums">Back to forums</a></p>
         <article class="card discussion-card">
             <p class="discussion-card__meta">Started by <a href="/users/<%= discussion.author %>"><%= discussion.author %></a></p>
@@ -35,7 +35,7 @@
         <% } %>
         <div class="discussion-replies">
             <h2>Replies</h2>
-            <div class="discussion-replies__list">
+            <div class="discussion-replies__list" id="discussion-replies-list">
             <% discussion.replies.forEach((reply) => { %>
                 <article class="card discussion-reply">
                     <p class="discussion-reply__author"><a href="/users/<%= reply.author %>"><%= reply.author %></a></p>
