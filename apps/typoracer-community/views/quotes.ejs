@@ -1,0 +1,18 @@
+<main class="page-content">
+    <section class="quote-section">
+        <h1>Quotes</h1>
+        <div class="card search-box">
+            <label class="search-box__label" for="search-input">Search Quotes</label>
+            <input id="search-input" class="search-box__input" type="search"
+                   placeholder="Find a quote, author, or keyword"/>
+        </div>
+        <div class="quote-grid">
+            <% quotes.forEach((quote) => { %>
+                <a class="card card-link" href="/quotes/<%= quote.id %>">
+                    <img class="card__image" src="<%= quote.image %>" alt="<%= quote.alt %>" />
+                    <p class="card__text"><%= quote.text %></p>
+                </a>
+            <% }) %>
+        </div>
+    </section>
+</main>
