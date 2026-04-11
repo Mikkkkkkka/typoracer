@@ -29,6 +29,20 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Docker
+
+This app can be containerized with the included `Dockerfile` and `compose.yaml`.
+
+```bash
+# build the image
+$ docker build -t typoracer-community:local .
+
+# or build and run with Docker Compose
+$ docker compose up -d
+```
+
+Docker uses the repository root as the build context and applies [`.dockerignore`](.dockerignore), so local dependencies, build output, logs, Git metadata, and environment files are not sent to the daemon. The container listens on port `3000`.
+
 ## Run tests
 
 ```bash
