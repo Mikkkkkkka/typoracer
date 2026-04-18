@@ -4,6 +4,7 @@ import { PagesModule } from './pages/pages.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { UsersModule } from './users/users.module';
+import { AttemptsModule } from './attempts/attempts.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { UsersModule } from './users/users.module';
     DiscussionsModule,
     UsersModule,
     PagesModule,
+    AttemptsModule,
   ],
   controllers: [],
   providers: [],
