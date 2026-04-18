@@ -223,7 +223,7 @@ async function main() {
 }
 
 main()
-  .catch(async (error) => {
+  .catch((error) => {
     console.error(error);
     process.exitCode = 1;
   })
