@@ -62,6 +62,62 @@ export class DiscussionsService {
     return discussion ? this.mapDiscussion(discussion) : undefined;
   }
 
+  async getReplies(discussionId: number): Promise<DiscussionReply[]> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { id: discussionId },
+      select: { id: true },
+    });
+
+    if (!discussion) {
+      return [];
+    }
+
+    const replies = await this.prisma.discussionReply.findMany({
+      where: { discussionId },
+      orderBy: { id: 'asc' },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    return replies.map((reply) => ({
+      author: reply.author.username,
+      text: reply.text,
+    }));
+  }
+
+  async getReplyById(
+    discussionId: number,
+    replyId: number,
+  ): Promise<DiscussionReply | undefined> {
+    const reply = await this.prisma.discussionReply.findFirst({
+      where: {
+        id: replyId,
+        discussionId,
+      },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (!reply) {
+      return undefined;
+    }
+
+    return {
+      author: reply.author.username,
+      text: reply.text,
+    };
+  }
+
   async getDiscussionsByAuthor(username: string): Promise<Discussion[]> {
     const discussions = await this.prisma.discussion.findMany({
       where: {

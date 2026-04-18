@@ -13,7 +13,7 @@ import { AttemptsService } from './attempts.service';
 import { CreateAttemptDto } from './dto/create-attempt.dto';
 import { UpdateAttemptDto } from './dto/update-attempt.dto';
 
-@Controller('attempts')
+@Controller('api/attempts')
 export class AttemptsController {
   constructor(private readonly attemptsService: AttemptsService) {}
 

@@ -34,7 +34,7 @@
       }
 
       try {
-        const response = await fetch(`/forums/${discussionId}/replies`, {
+        const response = await fetch(`/api/discussions/${discussionId}/replies`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
