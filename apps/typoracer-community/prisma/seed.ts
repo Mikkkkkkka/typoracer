@@ -1,6 +1,16 @@
+import 'dotenv/config';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, QuoteStatus } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is required.');
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg(databaseUrl),
+});
 
 async function main() {
   await prisma.attempt.deleteMany();
