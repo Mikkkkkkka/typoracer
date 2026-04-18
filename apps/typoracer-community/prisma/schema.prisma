@@ -18,8 +18,6 @@ model User {
   password          String
   joinedAt          DateTime          @map("joined_at")
   bio               String
-  wpm               Int
-  accuracy          Int
   attempts          Attempt[]
   discussions       Discussion[]
   discussionReplies DiscussionReply[]

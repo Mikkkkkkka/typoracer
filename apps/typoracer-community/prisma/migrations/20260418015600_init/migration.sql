@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "quote_status" AS ENUM ('SUBMITTED', 'APPROVED');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" SERIAL NOT NULL,
@@ -5,8 +8,6 @@ CREATE TABLE "users" (
     "password" TEXT NOT NULL,
     "joined_at" TIMESTAMP(3) NOT NULL,
     "bio" TEXT NOT NULL,
-    "wpm" INTEGER NOT NULL,
-    "accuracy" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -46,6 +47,7 @@ CREATE TABLE "quotes" (
     "alt" TEXT NOT NULL,
     "text" TEXT NOT NULL,
     "source" TEXT NOT NULL,
+    "status" "quote_status" NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
