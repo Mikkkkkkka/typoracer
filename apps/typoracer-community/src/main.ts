@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
 
@@ -18,6 +19,14 @@ async function bootstrap() {
 
   app.set('layout', 'layouts/main');
   app.use(layouts);
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Typoracer Community API')
+    .setDescription('REST API for the Typoracer community backend.')
+    .setVersion('1.0.0')
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, swaggerDocument);
 
   await app.listen(process.env.PORT ?? 3000);
 }

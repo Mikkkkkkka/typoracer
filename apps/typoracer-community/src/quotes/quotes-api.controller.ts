@@ -9,11 +9,25 @@ import {
   Post,
   Sse,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { CreateAttemptDto } from '../attempts/dto/create-attempt.dto';
 import { QuoteRecordsEventsService } from './quote-records-events.service';
+import {
+  QuoteDetailDto,
+  QuoteRecordsPayloadDto,
+  QuoteSummaryDto,
+} from './quotes-api.models';
 import { QuotesService } from './quotes.service';
 
+@ApiTags('quotes')
 @Controller('api/quotes')
 export class QuotesApiController {
   constructor(
@@ -21,11 +35,16 @@ export class QuotesApiController {
     private readonly quoteRecordsEvents: QuoteRecordsEventsService,
   ) {}
 
+  @ApiOperation({ summary: 'List approved quotes' })
+  @ApiOkResponse({ type: QuoteSummaryDto, isArray: true })
   @Get()
   findAll() {
     return this.quotesService.getQuotes();
   }
 
+  @ApiOperation({ summary: 'Get quote details with records' })
+  @ApiOkResponse({ type: QuoteDetailDto })
+  @ApiNotFoundResponse({ description: 'Quote was not found.' })
   @Get(':quoteId')
   async findOne(@Param('quoteId', ParseIntPipe) quoteId: number) {
     const quote = await this.quotesService.getQuoteById(quoteId);
@@ -37,6 +56,9 @@ export class QuotesApiController {
     return quote;
   }
 
+  @ApiOperation({ summary: 'Get current quote records snapshot' })
+  @ApiOkResponse({ type: QuoteRecordsPayloadDto })
+  @ApiNotFoundResponse({ description: 'Quote was not found.' })
   @Get(':quoteId/records')
   async getRecords(@Param('quoteId', ParseIntPipe) quoteId: number) {
     const payload = await this.quotesService.getQuoteRecordsPayload(quoteId);
@@ -48,6 +70,11 @@ export class QuotesApiController {
     return payload;
   }
 
+  @ApiOperation({ summary: 'Stream quote record updates over SSE' })
+  @ApiOkResponse({
+    description: 'Server-sent events stream of quote record updates.',
+  })
+  @ApiNotFoundResponse({ description: 'Quote was not found.' })
   @Sse(':quoteId/records/stream')
   async streamQuoteRecords(
     @Param('quoteId', ParseIntPipe) quoteId: number,
@@ -61,6 +88,10 @@ export class QuotesApiController {
     return this.quoteRecordsEvents.createStream(quoteId, payload);
   }
 
+  @ApiOperation({ summary: 'Create an attempt for a quote' })
+  @ApiCreatedResponse({ type: QuoteRecordsPayloadDto })
+  @ApiBadRequestResponse({ description: 'Invalid attempt payload.' })
+  @ApiNotFoundResponse({ description: 'Quote or user was not found.' })
   @Post(':quoteId/attempts')
   createAttempt(
     @Param('quoteId', ParseIntPipe) quoteId: number,

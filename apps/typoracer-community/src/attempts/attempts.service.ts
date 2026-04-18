@@ -26,7 +26,7 @@ export class AttemptsService {
         userId: createAttemptDto.userId,
         accuracy: createAttemptDto.accuracy,
         wpm: createAttemptDto.wpm,
-        maxRawWpm: createAttemptDto.maxRawWpm,
+        maxRawWpm: createAttemptDto.maxRawWpm ?? createAttemptDto.wpm,
       },
     });
 
