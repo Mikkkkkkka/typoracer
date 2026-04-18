@@ -1,4 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  PaginatedResult,
+  PaginationParams,
+} from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuoteRecordsEventsService } from './quote-records-events.service';
 import {
@@ -16,10 +20,31 @@ export class QuotesService {
     private readonly quoteRecordsEvents: QuoteRecordsEventsService,
   ) {}
 
-  async getQuotes(): Promise<QuoteSummary[]> {
-    return this.prisma.quote.findMany({
+  async getQuotes(): Promise<QuoteSummary[]>;
+  async getQuotes(
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<QuoteSummary>>;
+  async getQuotes(
+    pagination?: PaginationParams,
+  ): Promise<PaginatedResult<QuoteSummary> | QuoteSummary[]> {
+    if (!pagination) {
+      return this.prisma.quote.findMany({
+        where: { status: 'APPROVED' },
+        orderBy: { id: 'asc' },
+        select: {
+          id: true,
+          image: true,
+          alt: true,
+          text: true,
+        },
+      });
+    }
+
+    const quotes = await this.prisma.quote.findMany({
       where: { status: 'APPROVED' },
       orderBy: { id: 'asc' },
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit + 1,
       select: {
         id: true,
         image: true,
@@ -27,6 +52,11 @@ export class QuotesService {
         text: true,
       },
     });
+
+    return {
+      items: quotes.slice(0, pagination.limit),
+      hasNextPage: quotes.length > pagination.limit,
+    };
   }
 
   async getQuoteById(quoteId: number): Promise<QuoteDetail | undefined> {

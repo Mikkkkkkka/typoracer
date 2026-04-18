@@ -7,6 +7,9 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
+  Req,
+  Res,
   Sse,
 } from '@nestjs/common';
 import {
@@ -15,10 +18,14 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
 import { Observable } from 'rxjs';
 import { CreateAttemptDto } from '../attempts/dto/create-attempt.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
 import { QuoteRecordsEventsService } from './quote-records-events.service';
 import {
   QuoteDetailDto,
@@ -36,10 +43,27 @@ export class QuotesApiController {
   ) {}
 
   @ApiOperation({ summary: 'List approved quotes' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ type: QuoteSummaryDto, isArray: true })
   @Get()
-  findAll() {
-    return this.quotesService.getQuotes();
+  async findAll(
+    @Query() pagination: PaginationQueryDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.quotesService.getQuotes(pagination);
+    const linkHeader = buildPaginationLinkHeader(
+      request,
+      pagination,
+      result.hasNextPage,
+    );
+
+    if (linkHeader) {
+      response.setHeader('Link', linkHeader);
+    }
+
+    return result.items;
   }
 
   @ApiOperation({ summary: 'Get quote details with records' })

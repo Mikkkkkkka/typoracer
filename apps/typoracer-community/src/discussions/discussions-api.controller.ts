@@ -7,6 +7,9 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
+  Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -14,8 +17,12 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
 import {
   DiscussionDto,
   DiscussionReplyDto,
@@ -30,10 +37,27 @@ export class DiscussionsApiController {
   constructor(private readonly discussionsService: DiscussionsService) {}
 
   @ApiOperation({ summary: 'List discussions' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ type: DiscussionDto, isArray: true })
   @Get()
-  findAll() {
-    return this.discussionsService.getDiscussions();
+  async findAll(
+    @Query() pagination: PaginationQueryDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.discussionsService.getDiscussions(pagination);
+    const linkHeader = buildPaginationLinkHeader(
+      request,
+      pagination,
+      result.hasNextPage,
+    );
+
+    if (linkHeader) {
+      response.setHeader('Link', linkHeader);
+    }
+
+    return result.items;
   }
 
   @ApiOperation({ summary: 'Get discussion details' })
@@ -52,10 +76,17 @@ export class DiscussionsApiController {
   }
 
   @ApiOperation({ summary: 'List replies for a discussion' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ type: DiscussionReplyDto, isArray: true })
   @ApiNotFoundResponse({ description: 'Discussion was not found.' })
   @Get(':discussionId/replies')
-  async findReplies(@Param('discussionId', ParseIntPipe) discussionId: number) {
+  async findReplies(
+    @Param('discussionId', ParseIntPipe) discussionId: number,
+    @Query() pagination: PaginationQueryDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const discussion =
       await this.discussionsService.getDiscussionById(discussionId);
 
@@ -63,7 +94,21 @@ export class DiscussionsApiController {
       throw new NotFoundException('Discussion not found.');
     }
 
-    return this.discussionsService.getReplies(discussionId);
+    const result = await this.discussionsService.getReplies(
+      discussionId,
+      pagination,
+    );
+    const linkHeader = buildPaginationLinkHeader(
+      request,
+      pagination,
+      result.hasNextPage,
+    );
+
+    if (linkHeader) {
+      response.setHeader('Link', linkHeader);
+    }
+
+    return result.items;
   }
 
   @ApiOperation({ summary: 'Get a discussion reply by id' })

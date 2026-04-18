@@ -7,6 +7,9 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
+  Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -15,8 +18,12 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
 import { AttemptsService } from './attempts.service';
 import { CreateAttemptDto } from './dto/create-attempt.dto';
 import { UpdateAttemptDto } from './dto/update-attempt.dto';
@@ -40,10 +47,27 @@ export class AttemptsController {
   }
 
   @ApiOperation({ summary: 'List all attempts' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ type: Attempt, isArray: true })
   @Get()
-  findAll() {
-    return this.attemptsService.findAll();
+  async findAll(
+    @Query() pagination: PaginationQueryDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.attemptsService.findAll(pagination);
+    const linkHeader = buildPaginationLinkHeader(
+      request,
+      pagination,
+      result.hasNextPage,
+    );
+
+    if (linkHeader) {
+      response.setHeader('Link', linkHeader);
+    }
+
+    return result.items;
   }
 
   @ApiOperation({ summary: 'Get an attempt by id' })
