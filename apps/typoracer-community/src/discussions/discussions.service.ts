@@ -1,4 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import {
+  PaginatedResult,
+  PaginationParams,
+} from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateDiscussionReply,
@@ -10,9 +14,17 @@ import {
 export class DiscussionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDiscussions(): Promise<Discussion[]> {
+  async getDiscussions(): Promise<Discussion[]>;
+  async getDiscussions(
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<Discussion>>;
+  async getDiscussions(
+    pagination?: PaginationParams,
+  ): Promise<PaginatedResult<Discussion> | Discussion[]> {
     const discussions = await this.prisma.discussion.findMany({
       orderBy: { id: 'asc' },
+      skip: pagination ? (pagination.page - 1) * pagination.limit : undefined,
+      take: pagination ? pagination.limit + 1 : undefined,
       include: {
         author: {
           select: {
@@ -32,7 +44,18 @@ export class DiscussionsService {
       },
     });
 
-    return discussions.map((discussion) => this.mapDiscussion(discussion));
+    const mappedDiscussions = discussions.map((discussion) =>
+      this.mapDiscussion(discussion),
+    );
+
+    if (!pagination) {
+      return mappedDiscussions;
+    }
+
+    return {
+      items: mappedDiscussions.slice(0, pagination.limit),
+      hasNextPage: mappedDiscussions.length > pagination.limit,
+    };
   }
 
   async getDiscussionById(
@@ -62,7 +85,90 @@ export class DiscussionsService {
     return discussion ? this.mapDiscussion(discussion) : undefined;
   }
 
-  async getDiscussionsByAuthor(username: string): Promise<Discussion[]> {
+  async getReplies(discussionId: number): Promise<DiscussionReply[]>;
+  async getReplies(
+    discussionId: number,
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<DiscussionReply>>;
+  async getReplies(
+    discussionId: number,
+    pagination?: PaginationParams,
+  ): Promise<PaginatedResult<DiscussionReply> | DiscussionReply[]> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { id: discussionId },
+      select: { id: true },
+    });
+
+    if (!discussion) {
+      return [];
+    }
+
+    const replies = await this.prisma.discussionReply.findMany({
+      where: { discussionId },
+      orderBy: { id: 'asc' },
+      skip: pagination ? (pagination.page - 1) * pagination.limit : undefined,
+      take: pagination ? pagination.limit + 1 : undefined,
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    const mappedReplies = replies.map((reply) => ({
+      author: reply.author.username,
+      text: reply.text,
+    }));
+
+    if (!pagination) {
+      return mappedReplies;
+    }
+
+    return {
+      items: mappedReplies.slice(0, pagination.limit),
+      hasNextPage: mappedReplies.length > pagination.limit,
+    };
+  }
+
+  async getReplyById(
+    discussionId: number,
+    replyId: number,
+  ): Promise<DiscussionReply | undefined> {
+    const reply = await this.prisma.discussionReply.findFirst({
+      where: {
+        id: replyId,
+        discussionId,
+      },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (!reply) {
+      return undefined;
+    }
+
+    return {
+      author: reply.author.username,
+      text: reply.text,
+    };
+  }
+
+  async getDiscussionsByAuthor(username: string): Promise<Discussion[]>;
+  async getDiscussionsByAuthor(
+    username: string,
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<Discussion>>;
+  async getDiscussionsByAuthor(
+    username: string,
+    pagination?: PaginationParams,
+  ): Promise<PaginatedResult<Discussion> | Discussion[]> {
     const discussions = await this.prisma.discussion.findMany({
       where: {
         author: {
@@ -75,6 +181,8 @@ export class DiscussionsService {
         },
       },
       orderBy: { id: 'asc' },
+      skip: pagination ? (pagination.page - 1) * pagination.limit : undefined,
+      take: pagination ? pagination.limit + 1 : undefined,
       include: {
         author: {
           select: {
@@ -94,7 +202,18 @@ export class DiscussionsService {
       },
     });
 
-    return discussions.map((discussion) => this.mapDiscussion(discussion));
+    const mappedDiscussions = discussions.map((discussion) =>
+      this.mapDiscussion(discussion),
+    );
+
+    if (!pagination) {
+      return mappedDiscussions;
+    }
+
+    return {
+      items: mappedDiscussions.slice(0, pagination.limit),
+      hasNextPage: mappedDiscussions.length > pagination.limit,
+    };
   }
 
   async addReply(

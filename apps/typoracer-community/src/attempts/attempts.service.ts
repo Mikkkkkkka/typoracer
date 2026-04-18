@@ -1,4 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  PaginatedResult,
+  PaginationParams,
+} from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuoteRecordsEventsService } from '../quotes/quote-records-events.service';
 import { QuotesService } from '../quotes/quotes.service';
@@ -26,7 +30,7 @@ export class AttemptsService {
         userId: createAttemptDto.userId,
         accuracy: createAttemptDto.accuracy,
         wpm: createAttemptDto.wpm,
-        maxRawWpm: createAttemptDto.maxRawWpm,
+        maxRawWpm: createAttemptDto.maxRawWpm ?? createAttemptDto.wpm,
       },
     });
 
@@ -35,12 +39,29 @@ export class AttemptsService {
     return this.mapAttempt(attempt);
   }
 
-  async findAll(): Promise<Attempt[]> {
+  async findAll(): Promise<Attempt[]>;
+  async findAll(
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<Attempt>>;
+  async findAll(
+    pagination?: PaginationParams,
+  ): Promise<PaginatedResult<Attempt> | Attempt[]> {
     const attempts = await this.prisma.attempt.findMany({
       orderBy: { id: 'asc' },
+      skip: pagination ? (pagination.page - 1) * pagination.limit : undefined,
+      take: pagination ? pagination.limit + 1 : undefined,
     });
 
-    return attempts.map((attempt) => this.mapAttempt(attempt));
+    const mappedAttempts = attempts.map((attempt) => this.mapAttempt(attempt));
+
+    if (!pagination) {
+      return mappedAttempts;
+    }
+
+    return {
+      items: mappedAttempts.slice(0, pagination.limit),
+      hasNextPage: mappedAttempts.length > pagination.limit,
+    };
   }
 
   async findOne(id: number): Promise<Attempt> {
@@ -53,6 +74,82 @@ export class AttemptsService {
     }
 
     return this.mapAttempt(attempt);
+  }
+
+  async findByQuote(
+    quoteId: number,
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<Attempt>> {
+    const quote = await this.prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: { id: true },
+    });
+
+    if (!quote) {
+      throw new NotFoundException('Quote not found.');
+    }
+
+    const attempts = await this.prisma.attempt.findMany({
+      where: { quoteId },
+      orderBy: { id: 'asc' },
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit + 1,
+    });
+
+    const mappedAttempts = attempts.map((attempt) => this.mapAttempt(attempt));
+
+    return {
+      items: mappedAttempts.slice(0, pagination.limit),
+      hasNextPage: mappedAttempts.length > pagination.limit,
+    };
+  }
+
+  async findOneByQuote(quoteId: number, id: number): Promise<Attempt> {
+    const attempt = await this.prisma.attempt.findFirst({
+      where: {
+        id,
+        quoteId,
+      },
+    });
+
+    if (!attempt) {
+      throw new NotFoundException('Attempt not found.');
+    }
+
+    return this.mapAttempt(attempt);
+  }
+
+  async findByUser(
+    username: string,
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<Attempt>> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const attempts = await this.prisma.attempt.findMany({
+      where: { userId: user.id },
+      orderBy: { id: 'asc' },
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit + 1,
+    });
+
+    const mappedAttempts = attempts.map((attempt) => this.mapAttempt(attempt));
+
+    return {
+      items: mappedAttempts.slice(0, pagination.limit),
+      hasNextPage: mappedAttempts.length > pagination.limit,
+    };
   }
 
   async update(

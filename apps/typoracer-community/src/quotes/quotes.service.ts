@@ -1,4 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Attempt } from '../attempts/entities/attempt.entity';
+import {
+  PaginatedResult,
+  PaginationParams,
+} from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuoteRecordsEventsService } from './quote-records-events.service';
 import {
@@ -16,10 +21,31 @@ export class QuotesService {
     private readonly quoteRecordsEvents: QuoteRecordsEventsService,
   ) {}
 
-  async getQuotes(): Promise<QuoteSummary[]> {
-    return this.prisma.quote.findMany({
+  async getQuotes(): Promise<QuoteSummary[]>;
+  async getQuotes(
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<QuoteSummary>>;
+  async getQuotes(
+    pagination?: PaginationParams,
+  ): Promise<PaginatedResult<QuoteSummary> | QuoteSummary[]> {
+    if (!pagination) {
+      return this.prisma.quote.findMany({
+        where: { status: 'APPROVED' },
+        orderBy: { id: 'asc' },
+        select: {
+          id: true,
+          image: true,
+          alt: true,
+          text: true,
+        },
+      });
+    }
+
+    const quotes = await this.prisma.quote.findMany({
       where: { status: 'APPROVED' },
       orderBy: { id: 'asc' },
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit + 1,
       select: {
         id: true,
         image: true,
@@ -27,6 +53,11 @@ export class QuotesService {
         text: true,
       },
     });
+
+    return {
+      items: quotes.slice(0, pagination.limit),
+      hasNextPage: quotes.length > pagination.limit,
+    };
   }
 
   async getQuoteById(quoteId: number): Promise<QuoteDetail | undefined> {
@@ -111,6 +142,52 @@ export class QuotesService {
       records: await this.getQuoteRecords(quote.id),
       updatedAt: new Date().toISOString(),
     };
+  }
+
+  async getAttemptsByQuote(
+    quoteId: number,
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<Attempt>> {
+    const quote = await this.prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: { id: true },
+    });
+
+    if (!quote) {
+      throw new NotFoundException('Quote not found.');
+    }
+
+    const attempts = await this.prisma.attempt.findMany({
+      where: { quoteId },
+      orderBy: { id: 'asc' },
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit + 1,
+    });
+
+    const mappedAttempts = attempts.map((attempt) => this.mapAttempt(attempt));
+
+    return {
+      items: mappedAttempts.slice(0, pagination.limit),
+      hasNextPage: mappedAttempts.length > pagination.limit,
+    };
+  }
+
+  async getAttemptByQuote(
+    quoteId: number,
+    attemptId: number,
+  ): Promise<Attempt> {
+    const attempt = await this.prisma.attempt.findFirst({
+      where: {
+        id: attemptId,
+        quoteId,
+      },
+    });
+
+    if (!attempt) {
+      throw new NotFoundException('Attempt not found.');
+    }
+
+    return this.mapAttempt(attempt);
   }
 
   async createAttempt(input: CreateAttemptInput): Promise<QuoteRecordsPayload> {
@@ -205,5 +282,25 @@ export class QuotesService {
       day: 'numeric',
       year: 'numeric',
     }).format(date);
+  }
+
+  private mapAttempt(attempt: {
+    id: number;
+    quoteId: number;
+    userId: number;
+    accuracy: number;
+    wpm: number;
+    maxRawWpm: number;
+    createdAt: Date;
+  }): Attempt {
+    return {
+      id: attempt.id,
+      quoteId: attempt.quoteId,
+      userId: attempt.userId,
+      accuracy: attempt.accuracy,
+      wpm: attempt.wpm,
+      maxRawWpm: attempt.maxRawWpm,
+      createdAt: attempt.createdAt.toISOString(),
+    };
   }
 }

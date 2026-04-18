@@ -1,18 +1,5 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Headers,
-  HttpCode,
-  NotFoundException,
-  Param,
-  Post,
-  Render,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, Headers, Param, Render, Res } from '@nestjs/common';
 import express from 'express';
-import { CreateDiscussionReply } from './discussions.models';
 import { DiscussionsService } from './discussions.service';
 
 @Controller('forums')
@@ -52,33 +39,5 @@ export class DiscussionsController {
       currentUser: currentUser?.trim() || null,
       discussion,
     });
-  }
-
-  @Post(':discussionId/replies')
-  @HttpCode(201)
-  async createReply(
-    @Param('discussionId') discussionId: string,
-    @Headers('x-user') currentUserHeader: string | undefined,
-    @Body() body: Partial<CreateDiscussionReply>,
-  ) {
-    const author = currentUserHeader?.trim() || body.author?.trim();
-    const text = body.text?.trim();
-
-    if (!author || !text) {
-      throw new BadRequestException('Author and reply text are required.');
-    }
-
-    const reply = await this.discussionsService.addReply(Number(discussionId), {
-      author,
-      text,
-    });
-
-    if (!reply) {
-      throw new NotFoundException('Discussion or author not found.');
-    }
-
-    return {
-      reply,
-    };
   }
 }

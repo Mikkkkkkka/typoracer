@@ -25,7 +25,7 @@
     }
 
     const stream = new window.EventSource(
-      `/quotes/${encodeURIComponent(quoteId)}/records/stream`,
+      `/api/quotes/${encodeURIComponent(quoteId)}/records/stream`,
     );
 
     stream.addEventListener('records', function (event) {
