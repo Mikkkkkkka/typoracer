@@ -6,5 +6,40 @@
             <img class="card__image" src="<%= quote.image %>" alt="<%= quote.alt %>" />
             <p class="card__text"><%= quote.text %></p>
         </div>
+        <article class="card discussion-reply">
+            <p class="discussion-reply__author">Added by <a href="/users/<%= quote.author.username %>"><%= quote.author.username %></a> on <%= quote.createdAt %></p>
+        </article>
+    </section>
+    <section class="page-section">
+        <div class="section-intro">
+            <h2>Quote Leaderboard</h2>
+            <p>Best attempt for this quote from each player.</p>
+        </div>
+        <% if (quote.leaderboard.length === 0) { %>
+            <p>No attempts yet for this quote.</p>
+        <% } else { %>
+            <table class="leaderboard" aria-label="Quote leaderboard">
+                <thead class="leaderboard__head">
+                <tr>
+                    <th class="leaderboard__header">#</th>
+                    <th class="leaderboard__header">Name</th>
+                    <th class="leaderboard__header">Best WPM</th>
+                    <th class="leaderboard__header">Accuracy</th>
+                </tr>
+                </thead>
+                <tbody class="leaderboard__body">
+                <% quote.leaderboard.forEach((entry, index) => { %>
+                    <tr class="leaderboard__row">
+                        <td class="leaderboard__cell"><%= index + 1 %></td>
+                        <td class="leaderboard__cell">
+                            <a href="/users/<%= entry.username %>"><%= entry.username %></a>
+                        </td>
+                        <td class="leaderboard__cell"><%= entry.wpm %></td>
+                        <td class="leaderboard__cell"><%= entry.accuracy %>%</td>
+                    </tr>
+                <% }) %>
+                </tbody>
+            </table>
+        <% } %>
     </section>
 </main>
