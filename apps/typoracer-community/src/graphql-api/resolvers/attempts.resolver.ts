@@ -1,8 +1,19 @@
-import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Int,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { AttemptsService } from '../../attempts/attempts.service';
 import { QuotesService } from '../../quotes/quotes.service';
 import { UsersService } from '../../users/users.service';
-import { CreateAttemptInput, UpdateAttemptInput } from '../inputs/attempt.inputs';
+import {
+  CreateAttemptInput,
+  UpdateAttemptInput,
+} from '../inputs/attempt.inputs';
 import { buildPage, normalizePagination } from '../graphql.helpers';
 import { PaginationInput } from '../types/pagination.input';
 import { AttemptType, QuoteType } from '../types/quote.type';
@@ -119,7 +130,9 @@ export class AttemptsResolver {
     description: 'Resolve the related quote.',
   })
   async quote(@Parent() attempt: AttemptType): Promise<QuoteType | null> {
-    const quote = await this.quotesService.getQuoteReferenceById(attempt.quoteId);
+    const quote = await this.quotesService.getQuoteReferenceById(
+      attempt.quoteId,
+    );
 
     if (!quote) {
       return null;

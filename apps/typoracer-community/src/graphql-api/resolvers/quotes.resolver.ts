@@ -1,4 +1,12 @@
-import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Int,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { AttemptsService } from '../../attempts/attempts.service';
 import { QuotesService } from '../../quotes/quotes.service';
 import { UsersService } from '../../users/users.service';
@@ -93,7 +101,8 @@ export class QuotesResolver {
 
   @Mutation(() => QuoteRecordsPayloadType, {
     name: 'submitQuoteAttempt',
-    description: 'Create a new attempt for an approved quote and return updated records.',
+    description:
+      'Create a new attempt for an approved quote and return updated records.',
   })
   async submitQuoteAttempt(
     @Args('input', {
@@ -118,10 +127,13 @@ export class QuotesResolver {
     const username = quote.authorUsername;
 
     if (!username) {
-      const fullQuote = await this.quotesService.getQuoteReferenceById(quote.id);
+      const fullQuote = await this.quotesService.getQuoteReferenceById(
+        quote.id,
+      );
       return fullQuote
-        ? ((await this.usersService.getUserByUsername(fullQuote.author.username)) ??
-            null)
+        ? ((await this.usersService.getUserByUsername(
+            fullQuote.author.username,
+          )) ?? null)
         : null;
     }
 

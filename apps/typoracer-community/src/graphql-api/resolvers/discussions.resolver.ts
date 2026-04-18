@@ -13,7 +13,10 @@ import { CreateDiscussionReplyInput } from '../inputs/discussion.inputs';
 import { buildPage, normalizePagination } from '../graphql.helpers';
 import { DiscussionReplyType, DiscussionType } from '../types/discussion.type';
 import { PaginationInput } from '../types/pagination.input';
-import { DiscussionPageType, DiscussionReplyPageType } from '../types/wrappers.type';
+import {
+  DiscussionPageType,
+  DiscussionReplyPageType,
+} from '../types/wrappers.type';
 import { UserType } from '../types/user.type';
 
 @Resolver(() => DiscussionType)

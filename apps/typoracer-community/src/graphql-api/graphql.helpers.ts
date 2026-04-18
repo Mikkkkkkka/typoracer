@@ -1,4 +1,7 @@
-import { PaginationParams, PaginatedResult } from '../common/pagination/pagination.models';
+import {
+  PaginationParams,
+  PaginatedResult,
+} from '../common/pagination/pagination.models';
 import { PaginationInput, PageInfoType } from './types/pagination.input';
 
 export function normalizePagination(
@@ -21,10 +24,10 @@ export function buildPageInfo(
   };
 }
 
-export function buildPage<TPage extends { items: TItem[]; pageInfo: PageInfoType }, TItem>(
-  pagination: PaginationParams,
-  result: PaginatedResult<TItem>,
-): TPage {
+export function buildPage<
+  TPage extends { items: TItem[]; pageInfo: PageInfoType },
+  TItem,
+>(pagination: PaginationParams, result: PaginatedResult<TItem>): TPage {
   return {
     items: result.items,
     pageInfo: buildPageInfo(pagination, result.hasNextPage),

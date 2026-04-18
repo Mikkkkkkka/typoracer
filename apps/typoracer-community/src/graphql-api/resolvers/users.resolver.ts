@@ -6,7 +6,11 @@ import { normalizePagination, buildPage } from '../graphql.helpers';
 import { PaginationInput } from '../types/pagination.input';
 import { AttemptType } from '../types/quote.type';
 import { DiscussionType } from '../types/discussion.type';
-import { AttemptPageType, DiscussionPageType, UserPageType } from '../types/wrappers.type';
+import {
+  AttemptPageType,
+  DiscussionPageType,
+  UserPageType,
+} from '../types/wrappers.type';
 import { UserStatsType, UserType } from '../types/user.type';
 
 @Resolver(() => UserType)
@@ -62,7 +66,10 @@ export class UsersResolver {
     description: 'Resolve computed statistics for a user.',
   })
   async stats(@Parent() user: UserType): Promise<UserStatsType> {
-    if (user.stats && (user.stats.wpm || user.stats.accuracy || user.stats.discussions)) {
+    if (
+      user.stats &&
+      (user.stats.wpm || user.stats.accuracy || user.stats.discussions)
+    ) {
       return user.stats;
     }
 
@@ -117,7 +124,10 @@ export class UsersResolver {
     pagination?: PaginationInput,
   ): Promise<AttemptPageType> {
     const normalized = normalizePagination(pagination);
-    const result = await this.attemptsService.findByUser(user.username, normalized);
+    const result = await this.attemptsService.findByUser(
+      user.username,
+      normalized,
+    );
 
     return buildPage<AttemptPageType, AttemptType>(normalized, result);
   }
