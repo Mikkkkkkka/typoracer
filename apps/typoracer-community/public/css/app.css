@@ -311,6 +311,11 @@ textarea {
     color: #d1d5db;
 }
 
+.quote-records__status {
+    margin: 0 0 16px;
+    color: #9ca3af;
+}
+
 .forums-list,
 .discussion-replies,
 .discussion-replies__list {
