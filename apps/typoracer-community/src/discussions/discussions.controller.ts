@@ -21,21 +21,21 @@ export class DiscussionsController {
 
   @Get()
   @Render('forums')
-  getForumsPage() {
+  async getForumsPage() {
     return {
       currentPath: '/forums',
       title: 'Forums',
-      discussions: this.discussionsService.getDiscussions(),
+      discussions: await this.discussionsService.getDiscussions(),
     };
   }
 
   @Get(':discussionId')
-  getDiscussionDetail(
+  async getDiscussionDetail(
     @Param('discussionId') discussionId: string,
     @Headers('x-user') currentUser: string | undefined,
     @Res() res: express.Response,
   ) {
-    const discussion = this.discussionsService.getDiscussionById(
+    const discussion = await this.discussionsService.getDiscussionById(
       Number(discussionId),
     );
 
@@ -56,7 +56,7 @@ export class DiscussionsController {
 
   @Post(':discussionId/replies')
   @HttpCode(201)
-  createReply(
+  async createReply(
     @Param('discussionId') discussionId: string,
     @Headers('x-user') currentUserHeader: string | undefined,
     @Body() body: Partial<CreateDiscussionReply>,
@@ -68,13 +68,13 @@ export class DiscussionsController {
       throw new BadRequestException('Author and reply text are required.');
     }
 
-    const reply = this.discussionsService.addReply(Number(discussionId), {
+    const reply = await this.discussionsService.addReply(Number(discussionId), {
       author,
       text,
     });
 
     if (!reply) {
-      throw new NotFoundException('Discussion not found.');
+      throw new NotFoundException('Discussion or author not found.');
     }
 
     return {

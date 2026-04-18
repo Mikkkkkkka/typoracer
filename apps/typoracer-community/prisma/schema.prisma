@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                Int               @id @default(autoincrement())
+  username          String            @unique
+  password          String
+  joinedAt          DateTime          @map("joined_at")
+  bio               String
+  attempts          Attempt[]
+  discussions       Discussion[]
+  discussionReplies DiscussionReply[]
+  quotes            Quote[]
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Discussion {
+  id        Int               @id @default(autoincrement())
+  title     String
+  excerpt   String
+  body      String
+  authorId  Int               @map("author_id")
+  author    User              @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  replies   DiscussionReply[]
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  @@index([authorId], map: "discussions_author_id_idx")
+  @@map("discussions")
+}
+
+model DiscussionReply {
+  id           Int        @id @default(autoincrement())
+  discussionId Int        @map("discussion_id")
+  authorId     Int        @map("author_id")
+  text         String
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@index([discussionId], map: "discussion_replies_discussion_id_idx")
+  @@index([authorId], map: "discussion_replies_author_id_idx")
+  @@map("discussion_replies")
+}
+
+model Quote {
+  id        Int         @id @default(autoincrement())
+  authorId  Int         @map("author_id")
+  image     String
+  alt       String
+  text      String
+  source    String
+  status    QuoteStatus
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  author    User        @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  attempts  Attempt[]
+
+  @@map("quotes")
+}
+
+enum QuoteStatus {
+  SUBMITTED
+  APPROVED
+
+  @@map("quote_status")
+}
+
+model Attempt {
+  id        Int      @id @default(autoincrement())
+  quoteId   Int      @map("quote_id")
+  userId    Int      @map("user_id")
+  accuracy  Float
+  wpm       Float
+  maxRawWpm Float    @map("max_raw_wpm")
+  createdAt DateTime @default(now()) @map("created_at")
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId], map: "attempts_quote_id_idx")
+  @@index([userId], map: "attempts_user_id_idx")
+  @@map("attempts")
+}

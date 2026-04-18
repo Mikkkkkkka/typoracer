@@ -11,11 +11,11 @@ export class UsersController {
   ) {}
 
   @Get(':username')
-  getUserProfile(
+  async getUserProfile(
     @Param('username') username: string,
     @Res() res: express.Response,
   ) {
-    const user = this.usersService.getUserByUsername(username);
+    const user = await this.usersService.getUserByUsername(username);
 
     if (!user) {
       return res.status(404).render('not-found', {
@@ -28,7 +28,7 @@ export class UsersController {
       currentPath: '',
       title: user.username,
       user,
-      userDiscussions: this.discussionsService.getDiscussionsByAuthor(
+      userDiscussions: await this.discussionsService.getDiscussionsByAuthor(
         user.username,
       ),
     });

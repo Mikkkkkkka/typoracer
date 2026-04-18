@@ -1,94 +1,168 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateDiscussionReply,
   Discussion,
   DiscussionReply,
 } from './discussions.models';
 
-const discussions: Discussion[] = [
-  {
-    id: 1,
-    title: 'How do you improve accuracy past 98%?',
-    author: 'SpeedyFox',
-    excerpt:
-      'I can hold 110 WPM for short bursts, but accuracy drops on punctuation-heavy quotes.',
-    body: 'I can hold 110 WPM for short bursts, but accuracy drops on punctuation-heavy quotes. What drills actually help when the issue is not speed, but consistency on symbols and awkward transitions?',
-    replies: [
-      {
-        author: 'KeyMaster',
-        text: 'Slow down 5 to 10 WPM and train punctuation separately.',
-      },
-      {
-        author: 'SwiftType',
-        text: 'Use quote-based practice instead of word lists. It exposes the exact mistakes.',
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: 'Best mechanical switch for long typing sessions?',
-    author: 'KeyMaster',
-    excerpt:
-      'Looking for something lighter than tactiles without going full mushy linear.',
-    body: 'Looking for something lighter than tactiles without going full mushy linear. I type for work all day and then train in the evening, so fatigue matters more than sound.',
-    replies: [
-      {
-        author: 'DeskCat',
-        text: 'Light tactiles or medium linears are the safe middle ground.',
-      },
-      {
-        author: 'NovaKeys',
-        text: 'More important than the switch: consistent keycaps and a comfortable angle.',
-      },
-    ],
-  },
-  {
-    id: 3,
-    title: 'Should quotes mode rank by WPM or adjusted score?',
-    author: 'SwiftType',
-    excerpt:
-      'Raw WPM rewards risky typing. Adjusted scoring might produce better competition.',
-    body: 'Raw WPM rewards risky typing. Adjusted scoring might produce better competition, especially if the quote is long or punctuation-heavy. Curious what people think is fair.',
-    replies: [
-      {
-        author: 'SpeedyFox',
-        text: 'Adjusted score. Fast with errors should not beat clean typing.',
-      },
-    ],
-  },
-];
-
 @Injectable()
 export class DiscussionsService {
-  getDiscussions(): Discussion[] {
-    return discussions;
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getDiscussions(): Promise<Discussion[]> {
+    const discussions = await this.prisma.discussion.findMany({
+      orderBy: { id: 'asc' },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+        replies: {
+          orderBy: { id: 'asc' },
+          include: {
+            author: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return discussions.map((discussion) => this.mapDiscussion(discussion));
   }
 
-  getDiscussionById(discussionId: number): Discussion | undefined {
-    return discussions.find((discussion) => discussion.id === discussionId);
+  async getDiscussionById(
+    discussionId: number,
+  ): Promise<Discussion | undefined> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { id: discussionId },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+        replies: {
+          orderBy: { id: 'asc' },
+          include: {
+            author: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return discussion ? this.mapDiscussion(discussion) : undefined;
   }
 
-  getDiscussionsByAuthor(username: string): Discussion[] {
-    return discussions.filter((discussion) => discussion.author === username);
+  async getDiscussionsByAuthor(username: string): Promise<Discussion[]> {
+    const discussions = await this.prisma.discussion.findMany({
+      where: {
+        author: {
+          is: {
+            username: {
+              equals: username,
+              mode: 'insensitive',
+            },
+          },
+        },
+      },
+      orderBy: { id: 'asc' },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+        replies: {
+          orderBy: { id: 'asc' },
+          include: {
+            author: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return discussions.map((discussion) => this.mapDiscussion(discussion));
   }
 
-  addReply(
+  async addReply(
     discussionId: number,
     reply: CreateDiscussionReply,
-  ): DiscussionReply | undefined {
-    const discussion = discussions.find((item) => item.id === discussionId);
+  ): Promise<DiscussionReply | undefined> {
+    const [discussion, author] = await Promise.all([
+      this.prisma.discussion.findUnique({
+        where: { id: discussionId },
+        select: { id: true },
+      }),
+      this.prisma.user.findFirst({
+        where: {
+          username: {
+            equals: reply.author.trim(),
+            mode: 'insensitive',
+          },
+        },
+        select: {
+          id: true,
+          username: true,
+        },
+      }),
+    ]);
 
-    if (!discussion) {
+    if (!discussion || !author) {
       return undefined;
     }
 
-    const nextReply: DiscussionReply = {
-      author: reply.author.trim(),
-      text: reply.text.trim(),
+    const nextReply = await this.prisma.discussionReply.create({
+      data: {
+        discussionId,
+        authorId: author.id,
+        text: reply.text.trim(),
+      },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    return {
+      author: nextReply.author.username,
+      text: nextReply.text,
     };
+  }
 
-    discussion.replies.push(nextReply);
-
-    return nextReply;
+  private mapDiscussion(discussion: {
+    id: number;
+    title: string;
+    excerpt: string;
+    body: string;
+    author: { username: string };
+    replies: Array<{ text: string; author: { username: string } }>;
+  }): Discussion {
+    return {
+      id: discussion.id,
+      title: discussion.title,
+      author: discussion.author.username,
+      excerpt: discussion.excerpt,
+      body: discussion.body,
+      replies: discussion.replies.map((reply) => ({
+        author: reply.author.username,
+        text: reply.text,
+      })),
+    };
   }
 }

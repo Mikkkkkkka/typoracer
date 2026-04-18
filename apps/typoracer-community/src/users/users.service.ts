@@ -1,44 +1,62 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { UserProfile } from './users.models';
-
-const users: UserProfile[] = [
-  {
-    username: 'SpeedyFox',
-    joinedAt: 'March 2026',
-    bio: 'Competitive typer focused on quote mode and long-form consistency.',
-    stats: { wpm: 102, accuracy: 99, discussions: 2 },
-  },
-  {
-    username: 'KeyMaster',
-    joinedAt: 'February 2026',
-    bio: 'Mechanical keyboard enthusiast who optimizes layouts and switch feel.',
-    stats: { wpm: 97, accuracy: 96, discussions: 1 },
-  },
-  {
-    username: 'SwiftType',
-    joinedAt: 'January 2026',
-    bio: 'Interested in ranking systems, fairness, and sustainable speed training.',
-    stats: { wpm: 93, accuracy: 95, discussions: 1 },
-  },
-  {
-    username: 'DeskCat',
-    joinedAt: 'March 2026',
-    bio: 'Casual forum regular with opinions on keyboards and ergonomics.',
-    stats: { wpm: 88, accuracy: 94, discussions: 0 },
-  },
-  {
-    username: 'NovaKeys',
-    joinedAt: 'March 2026',
-    bio: 'Prefers practical setups over flashy gear.',
-    stats: { wpm: 91, accuracy: 97, discussions: 0 },
-  },
-];
 
 @Injectable()
 export class UsersService {
-  getUserByUsername(username: string): UserProfile | undefined {
-    return users.find(
-      (user) => user.username.toLowerCase() === username.toLowerCase(),
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getUserByUsername(username: string): Promise<UserProfile | undefined> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      include: {
+        attempts: {
+          select: {
+            accuracy: true,
+            wpm: true,
+          },
+        },
+        _count: {
+          select: {
+            discussions: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return undefined;
+    }
+
+    const bestWpm = user.attempts.reduce(
+      (currentBest, attempt) => Math.max(currentBest, attempt.wpm),
+      0,
     );
+    const averageAccuracy =
+      user.attempts.length === 0
+        ? 0
+        : user.attempts.reduce(
+            (total, attempt) => total + attempt.accuracy,
+            0,
+          ) / user.attempts.length;
+
+    return {
+      username: user.username,
+      joinedAt: new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        year: 'numeric',
+      }).format(user.joinedAt),
+      bio: user.bio,
+      stats: {
+        wpm: Math.round(bestWpm),
+        accuracy: Math.round(averageAccuracy),
+        discussions: user._count.discussions,
+      },
+    };
   }
 }
