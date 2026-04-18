@@ -8,5 +8,6 @@ import { AttemptsController } from './attempts.controller';
   imports: [PrismaModule, QuotesModule],
   controllers: [AttemptsController],
   providers: [AttemptsService],
+  exports: [AttemptsService],
 })
 export class AttemptsModule {}
