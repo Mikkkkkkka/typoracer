@@ -76,6 +76,82 @@ export class AttemptsService {
     return this.mapAttempt(attempt);
   }
 
+  async findByQuote(
+    quoteId: number,
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<Attempt>> {
+    const quote = await this.prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: { id: true },
+    });
+
+    if (!quote) {
+      throw new NotFoundException('Quote not found.');
+    }
+
+    const attempts = await this.prisma.attempt.findMany({
+      where: { quoteId },
+      orderBy: { id: 'asc' },
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit + 1,
+    });
+
+    const mappedAttempts = attempts.map((attempt) => this.mapAttempt(attempt));
+
+    return {
+      items: mappedAttempts.slice(0, pagination.limit),
+      hasNextPage: mappedAttempts.length > pagination.limit,
+    };
+  }
+
+  async findOneByQuote(quoteId: number, id: number): Promise<Attempt> {
+    const attempt = await this.prisma.attempt.findFirst({
+      where: {
+        id,
+        quoteId,
+      },
+    });
+
+    if (!attempt) {
+      throw new NotFoundException('Attempt not found.');
+    }
+
+    return this.mapAttempt(attempt);
+  }
+
+  async findByUser(
+    username: string,
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<Attempt>> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const attempts = await this.prisma.attempt.findMany({
+      where: { userId: user.id },
+      orderBy: { id: 'asc' },
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit + 1,
+    });
+
+    const mappedAttempts = attempts.map((attempt) => this.mapAttempt(attempt));
+
+    return {
+      items: mappedAttempts.slice(0, pagination.limit),
+      hasNextPage: mappedAttempts.length > pagination.limit,
+    };
+  }
+
   async update(
     id: number,
     updateAttemptDto: UpdateAttemptDto,

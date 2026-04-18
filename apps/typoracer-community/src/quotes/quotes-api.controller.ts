@@ -24,6 +24,7 @@ import {
 import type { Request, Response } from 'express';
 import { Observable } from 'rxjs';
 import { CreateAttemptDto } from '../attempts/dto/create-attempt.dto';
+import { Attempt } from '../attempts/entities/attempt.entity';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
 import { QuoteRecordsEventsService } from './quote-records-events.service';
@@ -128,5 +129,45 @@ export class QuotesApiController {
       wpm: body.wpm,
       maxRawWpm: body.maxRawWpm ?? body.wpm,
     });
+  }
+
+  @ApiOperation({ summary: 'List attempts for a quote' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiOkResponse({ type: Attempt, isArray: true })
+  @ApiNotFoundResponse({ description: 'Quote was not found.' })
+  @Get(':quoteId/attempts')
+  async findAttempts(
+    @Param('quoteId', ParseIntPipe) quoteId: number,
+    @Query() pagination: PaginationQueryDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.quotesService.getAttemptsByQuote(
+      quoteId,
+      pagination,
+    );
+    const linkHeader = buildPaginationLinkHeader(
+      request,
+      pagination,
+      result.hasNextPage,
+    );
+
+    if (linkHeader) {
+      response.setHeader('Link', linkHeader);
+    }
+
+    return result.items;
+  }
+
+  @ApiOperation({ summary: 'Get a quote attempt by id' })
+  @ApiOkResponse({ type: Attempt })
+  @ApiNotFoundResponse({ description: 'Attempt was not found.' })
+  @Get(':quoteId/attempts/:attemptId')
+  findAttempt(
+    @Param('quoteId', ParseIntPipe) quoteId: number,
+    @Param('attemptId', ParseIntPipe) attemptId: number,
+  ) {
+    return this.quotesService.getAttemptByQuote(quoteId, attemptId);
   }
 }

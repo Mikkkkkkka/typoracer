@@ -1,10 +1,54 @@
 import { Injectable } from '@nestjs/common';
+import {
+  PaginatedResult,
+  PaginationParams,
+} from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserProfile } from './users.models';
+
+export interface UserSummary {
+  username: string;
+  joinedAt: string;
+  bio: string;
+}
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async getUsers(): Promise<UserSummary[]>;
+  async getUsers(
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<UserSummary>>;
+  async getUsers(
+    pagination?: PaginationParams,
+  ): Promise<PaginatedResult<UserSummary> | UserSummary[]> {
+    const users = await this.prisma.user.findMany({
+      orderBy: { id: 'asc' },
+      skip: pagination ? (pagination.page - 1) * pagination.limit : undefined,
+      take: pagination ? pagination.limit + 1 : undefined,
+      select: {
+        username: true,
+        joinedAt: true,
+        bio: true,
+      },
+    });
+
+    const mappedUsers = users.map((user) => ({
+      username: user.username,
+      joinedAt: this.formatMonthYear(user.joinedAt),
+      bio: user.bio,
+    }));
+
+    if (!pagination) {
+      return mappedUsers;
+    }
+
+    return {
+      items: mappedUsers.slice(0, pagination.limit),
+      hasNextPage: mappedUsers.length > pagination.limit,
+    };
+  }
 
   async getUserByUsername(username: string): Promise<UserProfile | undefined> {
     const user = await this.prisma.user.findFirst({
@@ -47,10 +91,7 @@ export class UsersService {
 
     return {
       username: user.username,
-      joinedAt: new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        year: 'numeric',
-      }).format(user.joinedAt),
+      joinedAt: this.formatMonthYear(user.joinedAt),
       bio: user.bio,
       stats: {
         wpm: Math.round(bestWpm),
@@ -58,5 +99,12 @@ export class UsersService {
         discussions: user._count.discussions,
       },
     };
+  }
+
+  private formatMonthYear(date: Date) {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'long',
+      year: 'numeric',
+    }).format(date);
   }
 }

@@ -160,7 +160,15 @@ export class DiscussionsService {
     };
   }
 
-  async getDiscussionsByAuthor(username: string): Promise<Discussion[]> {
+  async getDiscussionsByAuthor(username: string): Promise<Discussion[]>;
+  async getDiscussionsByAuthor(
+    username: string,
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<Discussion>>;
+  async getDiscussionsByAuthor(
+    username: string,
+    pagination?: PaginationParams,
+  ): Promise<PaginatedResult<Discussion> | Discussion[]> {
     const discussions = await this.prisma.discussion.findMany({
       where: {
         author: {
@@ -173,6 +181,8 @@ export class DiscussionsService {
         },
       },
       orderBy: { id: 'asc' },
+      skip: pagination ? (pagination.page - 1) * pagination.limit : undefined,
+      take: pagination ? pagination.limit + 1 : undefined,
       include: {
         author: {
           select: {
@@ -192,7 +202,18 @@ export class DiscussionsService {
       },
     });
 
-    return discussions.map((discussion) => this.mapDiscussion(discussion));
+    const mappedDiscussions = discussions.map((discussion) =>
+      this.mapDiscussion(discussion),
+    );
+
+    if (!pagination) {
+      return mappedDiscussions;
+    }
+
+    return {
+      items: mappedDiscussions.slice(0, pagination.limit),
+      hasNextPage: mappedDiscussions.length > pagination.limit,
+    };
   }
 
   async addReply(

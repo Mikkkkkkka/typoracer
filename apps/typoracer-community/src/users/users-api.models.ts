@@ -1,5 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Attempt } from '../attempts/entities/attempt.entity';
 import { DiscussionDto } from '../discussions/discussions-api.models';
+
+export class UserSummaryDto {
+  @ApiProperty({ example: 'SpeedyFox' })
+  username!: string;
+
+  @ApiProperty({ example: 'April 2026' })
+  joinedAt!: string;
+
+  @ApiProperty({ example: 'Mechanical keyboard enthusiast.' })
+  bio!: string;
+}
 
 export class UserStatsDto {
   @ApiProperty({ example: 112 })
@@ -29,4 +41,9 @@ export class UserProfileDto {
 export class UserProfileWithDiscussionsDto extends UserProfileDto {
   @ApiProperty({ type: DiscussionDto, isArray: true })
   discussions!: DiscussionDto[];
+}
+
+export class UserAttemptsDto {
+  @ApiProperty({ type: Attempt, isArray: true })
+  attempts!: Attempt[];
 }
