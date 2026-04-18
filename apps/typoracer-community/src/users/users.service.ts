@@ -101,6 +101,52 @@ export class UsersService {
     };
   }
 
+  async getUserById(id: number): Promise<UserProfile | undefined> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        attempts: {
+          select: {
+            accuracy: true,
+            wpm: true,
+          },
+        },
+        _count: {
+          select: {
+            discussions: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return undefined;
+    }
+
+    const bestWpm = user.attempts.reduce(
+      (currentBest, attempt) => Math.max(currentBest, attempt.wpm),
+      0,
+    );
+    const averageAccuracy =
+      user.attempts.length === 0
+        ? 0
+        : user.attempts.reduce(
+            (total, attempt) => total + attempt.accuracy,
+            0,
+          ) / user.attempts.length;
+
+    return {
+      username: user.username,
+      joinedAt: this.formatMonthYear(user.joinedAt),
+      bio: user.bio,
+      stats: {
+        wpm: Math.round(bestWpm),
+        accuracy: Math.round(averageAccuracy),
+        discussions: user._count.discussions,
+      },
+    };
+  }
+
   private formatMonthYear(date: Date) {
     return new Intl.DateTimeFormat('en-US', {
       month: 'long',

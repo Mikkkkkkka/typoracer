@@ -97,6 +97,42 @@ export class QuotesService {
     };
   }
 
+  async getQuoteReferenceById(
+    quoteId: number,
+  ): Promise<QuoteDetail | undefined> {
+    const quote = await this.prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: {
+        id: true,
+        image: true,
+        alt: true,
+        text: true,
+        createdAt: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (!quote) {
+      return undefined;
+    }
+
+    return {
+      id: quote.id,
+      image: quote.image,
+      alt: quote.alt,
+      text: quote.text,
+      createdAt: this.formatLongDate(quote.createdAt),
+      author: {
+        username: quote.author.username,
+      },
+      records: await this.getQuoteRecords(quote.id),
+    };
+  }
+
   async getQuoteRecords(quoteId: number): Promise<QuoteRecordEntry[]> {
     const attempts = await this.prisma.attempt.findMany({
       where: {
