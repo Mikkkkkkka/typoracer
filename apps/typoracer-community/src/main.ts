@@ -1,8 +1,10 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
+import { AppExceptionFilter } from './common/filters/app-exception.filter';
 
 import { join } from 'path';
 import layouts from 'express-ejs-layouts';
@@ -19,6 +21,15 @@ async function bootstrap() {
 
   app.set('layout', 'layouts/main');
   app.use(layouts);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+  app.useGlobalFilters(new AppExceptionFilter());
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Typoracer Community API')
