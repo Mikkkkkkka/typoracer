@@ -1,5 +1,5 @@
-import { Controller, Get, Render, Res } from '@nestjs/common';
-import express from 'express';
+import { Controller, Get, Next, Render, Req, Res } from '@nestjs/common';
+import type { NextFunction, Request, Response } from 'express';
 
 @Controller()
 export class PagesController {
@@ -33,7 +33,16 @@ export class PagesController {
   }
 
   @Get('*')
-  getNotFound(@Res() res: express.Response) {
+  getNotFound(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Next() next: NextFunction,
+  ) {
+    // Let Apollo handle the GraphQL sandbox and introspection GET requests.
+    if (req.path === '/graphql') {
+      return next();
+    }
+
     return res.status(404).render('not-found', {
       currentPath: '',
       title: 'Page Not Found',
