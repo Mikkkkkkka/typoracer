@@ -35,7 +35,9 @@ export class DiscussionsService {
     return discussions.map((discussion) => this.mapDiscussion(discussion));
   }
 
-  async getDiscussionById(discussionId: number): Promise<Discussion | undefined> {
+  async getDiscussionById(
+    discussionId: number,
+  ): Promise<Discussion | undefined> {
     const discussion = await this.prisma.discussion.findUnique({
       where: { id: discussionId },
       include: {

@@ -40,8 +40,10 @@ export class UsersService {
     const averageAccuracy =
       user.attempts.length === 0
         ? 0
-        : user.attempts.reduce((total, attempt) => total + attempt.accuracy, 0) /
-          user.attempts.length;
+        : user.attempts.reduce(
+            (total, attempt) => total + attempt.accuracy,
+            0,
+          ) / user.attempts.length;
 
     return {
       username: user.username,
