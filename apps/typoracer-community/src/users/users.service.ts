@@ -4,25 +4,19 @@ import {
   PaginationParams,
 } from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
-import { UserProfile } from './users.models';
-
-export interface UserSummary {
-  username: string;
-  joinedAt: string;
-  bio: string;
-}
+import { User, UserProfile } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getUsers(): Promise<UserSummary[]>;
-  async getUsers(
+  async findAll(): Promise<User[]>;
+  async findAll(
     pagination: PaginationParams,
-  ): Promise<PaginatedResult<UserSummary>>;
-  async getUsers(
+  ): Promise<PaginatedResult<User>>;
+  async findAll(
     pagination?: PaginationParams,
-  ): Promise<PaginatedResult<UserSummary> | UserSummary[]> {
+  ): Promise<PaginatedResult<User> | User[]> {
     const users = await this.prisma.user.findMany({
       orderBy: { id: 'asc' },
       skip: pagination ? (pagination.page - 1) * pagination.limit : undefined,
@@ -50,7 +44,7 @@ export class UsersService {
     };
   }
 
-  async getUserByUsername(username: string): Promise<UserProfile | undefined> {
+  async findOne(username: string): Promise<UserProfile | undefined> {
     const user = await this.prisma.user.findFirst({
       where: {
         username: {

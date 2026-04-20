@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   PaginatedResult,
   PaginationParams,
@@ -214,6 +214,29 @@ export class DiscussionsService {
       items: mappedDiscussions.slice(0, pagination.limit),
       hasNextPage: mappedDiscussions.length > pagination.limit,
     };
+  }
+
+  async findByUser(
+    username: string,
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<Discussion>> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        username: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    return this.getDiscussionsByAuthor(user.username, pagination);
   }
 
   async addReply(

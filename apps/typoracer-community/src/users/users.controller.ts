@@ -15,7 +15,7 @@ export class UsersController {
     @Param('username') username: string,
     @Res() res: express.Response,
   ) {
-    const user = await this.usersService.getUserByUsername(username);
+    const user = await this.usersService.findOne(username);
 
     if (!user) {
       return res.status(404).render('not-found', {
