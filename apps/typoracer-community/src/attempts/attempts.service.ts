@@ -4,8 +4,8 @@ import {
   PaginationParams,
 } from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
-import { QuoteRecordsEventsService } from '../quotes/quote-records-events.service';
-import { QuotesService } from '../quotes/quotes.service';
+import { QuoteRecordsService } from '../quotes/quote-records.service';
+import { QuotesRecordsEventsService } from '../quotes/quotes-records-events.service';
 import { CreateAttemptDto } from './dto/create-attempt.dto';
 import { UpdateAttemptDto } from './dto/update-attempt.dto';
 import { Attempt } from './entities/attempt.entity';
@@ -14,8 +14,8 @@ import { Attempt } from './entities/attempt.entity';
 export class AttemptsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly quotesService: QuotesService,
-    private readonly quoteRecordsEvents: QuoteRecordsEventsService,
+    private readonly quoteRecordsService: QuoteRecordsService,
+    private readonly quotesRecordsEvents: QuotesRecordsEventsService,
   ) {}
 
   async create(createAttemptDto: CreateAttemptDto): Promise<Attempt> {
@@ -229,10 +229,10 @@ export class AttemptsService {
   }
 
   private async publishQuoteRecords(quoteId: number) {
-    const payload = await this.quotesService.getQuoteRecordsPayload(quoteId);
+    const payload = await this.quoteRecordsService.findPayload(quoteId);
 
     if (payload) {
-      this.quoteRecordsEvents.publish(quoteId, payload);
+      this.quotesRecordsEvents.publish(quoteId, payload);
     }
   }
 

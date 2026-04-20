@@ -12,7 +12,7 @@ export class QuotesController {
     return {
       currentPath: '/quotes',
       title: 'Search Quotes',
-      quotes: (await this.quotesService.getQuotes()).slice(0, 60),
+      quotes: (await this.quotesService.findAll()).slice(0, 60),
     };
   }
 
@@ -21,7 +21,7 @@ export class QuotesController {
     @Param('quoteId') quoteId: string,
     @Res() res: express.Response,
   ) {
-    const quote = await this.quotesService.getQuoteById(Number(quoteId));
+    const quote = await this.quotesService.findOne(Number(quoteId));
 
     if (!quote) {
       return res.status(404).render('not-found', {
