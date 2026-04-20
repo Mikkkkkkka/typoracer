@@ -114,7 +114,7 @@ function formatUpdatedAt(updatedAt) {
     return 'just now';
   }
 
-  return date.toLocaleTimeString('en-US', {
+  return date.toLocaleTimeString('ru-RU', {
     hour: 'numeric',
     minute: '2-digit',
     second: '2-digit',
