@@ -11,9 +11,7 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(): Promise<User[]>;
-  async findAll(
-    pagination: PaginationParams,
-  ): Promise<PaginatedResult<User>>;
+  async findAll(pagination: PaginationParams): Promise<PaginatedResult<User>>;
   async findAll(
     pagination?: PaginationParams,
   ): Promise<PaginatedResult<User> | User[]> {
