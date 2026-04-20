@@ -12,9 +12,11 @@ COPY package*.json ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
 COPY src ./src
+COPY prisma ./prisma
 COPY public ./public
 COPY views ./views
 
+RUN npx prisma generate
 RUN npm run build
 RUN npm prune --omit=dev
 
@@ -31,4 +33,4 @@ COPY --from=build /app/views ./views
 
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main.js"]
