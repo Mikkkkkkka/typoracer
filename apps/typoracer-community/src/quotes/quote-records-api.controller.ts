@@ -20,7 +20,7 @@ import { QuotesRecordsEventsService } from './quotes-records-events.service';
 
 @ApiTags('quotes')
 @Controller('api/quotes/:quoteId/records')
-export class QuoteRecordsController {
+export class QuoteRecordsApiController {
   constructor(
     private readonly quoteRecordsService: QuoteRecordsService,
     private readonly quotesRecordsEvents: QuotesRecordsEventsService,
