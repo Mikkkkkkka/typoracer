@@ -14,7 +14,7 @@ import { AttemptsService } from './attempts.service';
 
 @ApiTags('users')
 @Controller('api/users/:username/attempts')
-export class UserAttemptsController {
+export class UserAttemptsApiController {
   constructor(private readonly attemptsService: AttemptsService) {}
 
   @ApiOperation({ summary: 'List attempts created by a user' })

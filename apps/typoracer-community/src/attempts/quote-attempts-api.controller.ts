@@ -30,7 +30,7 @@ import { Attempt } from './entities/attempt.entity';
 
 @ApiTags('quotes')
 @Controller('api/quotes/:quoteId/attempts')
-export class QuoteAttemptsController {
+export class QuoteAttemptsApiController {
   constructor(
     private readonly attemptsService: AttemptsService,
     private readonly quoteRecordsService: QuoteRecordsService,

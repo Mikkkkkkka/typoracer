@@ -31,7 +31,7 @@ import { Attempt } from './entities/attempt.entity';
 
 @ApiTags('attempts')
 @Controller('api/attempts')
-export class AttemptsController {
+export class AttemptsApiController {
   constructor(private readonly attemptsService: AttemptsService) {}
 
   @ApiOperation({ summary: 'Create a typing attempt' })
