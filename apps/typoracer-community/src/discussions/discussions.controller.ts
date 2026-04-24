@@ -1,7 +1,9 @@
 import { Controller, Get, Headers, Param, Render, Res } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import express from 'express';
 import { DiscussionsService } from './discussions.service';
 
+@ApiExcludeController()
 @Controller('forums')
 export class DiscussionsController {
   constructor(private readonly discussionsService: DiscussionsService) {}

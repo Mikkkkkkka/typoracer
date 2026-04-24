@@ -1,7 +1,9 @@
 import { Controller, Get, Param, Render, Res } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import express from 'express';
 import { QuotesService } from './quotes.service';
 
+@ApiExcludeController()
 @Controller('quotes')
 export class QuotesController {
   constructor(private readonly quotesService: QuotesService) {}

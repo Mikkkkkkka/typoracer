@@ -1,8 +1,10 @@
 import { Controller, Get, Param, Res } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import express from 'express';
 import { DiscussionsService } from '../discussions/discussions.service';
 import { UsersService } from './users.service';
 
+@ApiExcludeController()
 @Controller('users')
 export class UsersController {
   constructor(
