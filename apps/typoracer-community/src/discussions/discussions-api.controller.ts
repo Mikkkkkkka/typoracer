@@ -13,14 +13,17 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
+import { AuthService } from '../auth/auth.service';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
 import { CreateDiscussionReplyDto } from './dto/create-discussion-reply.dto';
@@ -32,7 +35,10 @@ import { DiscussionsService } from './discussions.service';
 @ApiTags('discussions')
 @Controller('api/discussions')
 export class DiscussionsApiController {
-  constructor(private readonly discussionsService: DiscussionsService) {}
+  constructor(
+    private readonly discussionsService: DiscussionsService,
+    private readonly authService: AuthService,
+  ) {}
 
   @ApiOperation({ summary: 'List discussions' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -130,17 +136,21 @@ export class DiscussionsApiController {
   }
 
   @ApiOperation({ summary: 'Create a reply in a discussion' })
+  @ApiBearerAuth()
   @ApiCreatedResponse({ type: DiscussionReplyEnvelopeDto })
   @ApiBadRequestResponse({ description: 'Invalid reply payload.' })
   @ApiNotFoundResponse({ description: 'Discussion or author was not found.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
   @Post(':discussionId/replies')
   @HttpCode(201)
   async createReply(
     @Param('discussionId', ParseIntPipe) discussionId: number,
     @Body() body: CreateDiscussionReplyDto,
+    @Req() request: Request,
   ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
     const reply = await this.discussionsService.addReply(discussionId, {
-      author: body.author,
+      author: currentUser.username,
       text: body.text,
     });
 
