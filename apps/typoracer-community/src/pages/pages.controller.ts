@@ -34,16 +34,6 @@ export class PagesController {
     };
   }
 
-  @Get('quote-submission')
-  @Render('quote-submission')
-  async getQuoteSubmission(@Req() request: Request) {
-    return {
-      currentPath: '/quote-submission',
-      title: 'Typoracer Quote submission',
-      currentUser: await this.authService.getCurrentUser(request),
-    };
-  }
-
   @Get('*')
   async getNotFound(@Req() request: Request, @Res() res: Response) {
     return res.status(404).render('not-found', {
