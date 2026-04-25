@@ -8,7 +8,7 @@ import {
   CreateDiscussionReply,
   Discussion,
   DiscussionReply,
-} from './discussions.models';
+} from './entities/discussion.entity';
 
 @Injectable()
 export class DiscussionsService {

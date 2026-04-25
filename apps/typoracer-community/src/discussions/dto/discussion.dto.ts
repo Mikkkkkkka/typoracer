@@ -1,12 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-
-export class DiscussionReplyDto {
-  @ApiProperty({ example: 'SpeedyFox' })
-  author!: string;
-
-  @ApiProperty({ example: 'This quote is brutal on the last line.' })
-  text!: string;
-}
+import { DiscussionReplyDto } from './discussion-reply.dto';
 
 export class DiscussionDto {
   @ApiProperty({ example: 3 })
@@ -26,9 +19,4 @@ export class DiscussionDto {
 
   @ApiProperty({ type: DiscussionReplyDto, isArray: true })
   replies!: DiscussionReplyDto[];
-}
-
-export class DiscussionReplyEnvelopeDto {
-  @ApiProperty({ type: DiscussionReplyDto })
-  reply!: DiscussionReplyDto;
 }

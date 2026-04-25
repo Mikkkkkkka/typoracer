@@ -23,12 +23,10 @@ import {
 import type { Request, Response } from 'express';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
-import {
-  DiscussionDto,
-  DiscussionReplyDto,
-  DiscussionReplyEnvelopeDto,
-} from './discussions-api.models';
 import { CreateDiscussionReplyDto } from './dto/create-discussion-reply.dto';
+import { DiscussionDto } from './dto/discussion.dto';
+import { DiscussionReplyEnvelopeDto } from './dto/discussion-reply-envelope.dto';
+import { DiscussionReplyDto } from './dto/discussion-reply.dto';
 import { DiscussionsService } from './discussions.service';
 
 @ApiTags('discussions')

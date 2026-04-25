@@ -9,7 +9,7 @@ import {
 import type { Request, Response } from 'express';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
-import { DiscussionDto } from './discussions-api.models';
+import { DiscussionDto } from './dto/discussion.dto';
 import { DiscussionsService } from './discussions.service';
 
 @ApiTags('users')
