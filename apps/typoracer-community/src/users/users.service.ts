@@ -5,6 +5,7 @@ import {
 } from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
 import { User, UserProfile } from './entities/user.entity';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -91,6 +92,33 @@ export class UsersService {
         discussions: user._count.discussions,
       },
     };
+  }
+
+  async update(username: string, updateUser: UpdateUserDto): Promise<UserProfile | undefined> {
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingUser) {
+      return undefined;
+    }
+
+    await this.prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        bio: updateUser.bio,
+      },
+    });
+
+    return this.findOne(username);
   }
 
   private formatMonthYear(date: Date) {
