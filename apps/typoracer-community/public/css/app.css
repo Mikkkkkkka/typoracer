@@ -288,6 +288,21 @@ textarea {
     color: #9ca3af;
 }
 
+.generic-form__success {
+    color: #86efac;
+}
+
+.generic-form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.generic-form__secondary-link {
+    color: #d1d5db;
+}
+
 .generic-form__submit-button,
 .discussion-reply-form__submit,
 .quote-submissions__action-button {

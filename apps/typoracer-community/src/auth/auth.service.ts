@@ -111,6 +111,14 @@ export class AuthService {
     return `${unsignedToken}.${signature}`;
   }
 
+  hashPasswordForStorage(password: string) {
+    return this.hashPassword(password);
+  }
+
+  verifyPasswordAgainstStoredHash(password: string, storedPassword: string) {
+    return this.verifyPassword(password, storedPassword);
+  }
+
   private createAuthResult(user: AuthenticatedUser) {
     return {
       accessToken: this.signToken(user),

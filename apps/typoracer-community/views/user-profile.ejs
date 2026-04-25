@@ -4,7 +4,10 @@
             <article class="card discussion-card">
                 <p class="discussion-card__meta">Joined <%= user.joinedAt %></p>
                 <h1><%= user.username %></h1>
-                <p><%= user.bio %></p>
+                <p><%= user.bio ?? 'No bio yet.' %></p>
+                <% if (isOwnProfile) { %>
+                    <p><a href="/users/<%= encodeURIComponent(user.username) %>/edit">Edit profile</a></p>
+                <% } %>
             </article>
             <article class="card discussion-reply">
                 <p class="discussion-reply__author">Typing stats</p>

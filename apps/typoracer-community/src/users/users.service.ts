@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AuthService } from '../auth/auth.service';
 import {
   PaginatedResult,
   PaginationParams,
@@ -9,7 +14,10 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authService: AuthService,
+  ) {}
 
   async findAll(): Promise<User[]>;
   async findAll(pagination: PaginationParams): Promise<PaginatedResult<User>>;
@@ -94,7 +102,10 @@ export class UsersService {
     };
   }
 
-  async update(username: string, updateUser: UpdateUserDto): Promise<UserProfile | undefined> {
+  async update(
+    username: string,
+    updateUser: UpdateUserDto,
+  ): Promise<UserProfile | undefined> {
     const existingUser = await this.prisma.user.findFirst({
       where: {
         username: {
@@ -114,11 +125,90 @@ export class UsersService {
     await this.prisma.user.update({
       where: { id: existingUser.id },
       data: {
-        bio: updateUser.bio,
+        bio:
+          updateUser.bio === undefined
+            ? undefined
+            : updateUser.bio?.trim() || null,
       },
     });
 
     return this.findOne(username);
+  }
+
+  async updateDetails(
+    username: string,
+    updateUser: {
+      username: string;
+      bio: string | null;
+      currentPassword?: string;
+      newPassword?: string;
+    },
+  ): Promise<UserProfile | undefined> {
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+
+    if (!existingUser) {
+      return undefined;
+    }
+
+    const nextUsername = updateUser.username.trim();
+    const nextBio = updateUser.bio?.trim() || null;
+
+    const conflictingUser = await this.prisma.user.findFirst({
+      where: {
+        id: { not: existingUser.id },
+        username: {
+          equals: nextUsername,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (conflictingUser) {
+      throw new ConflictException('Username is already taken.');
+    }
+
+    let nextPassword: string | undefined;
+
+    if (updateUser.newPassword) {
+      if (
+        !updateUser.currentPassword ||
+        !this.authService.verifyPasswordAgainstStoredHash(
+          updateUser.currentPassword,
+          existingUser.password,
+        )
+      ) {
+        throw new UnauthorizedException('Current password is incorrect.');
+      }
+
+      nextPassword = this.authService.hashPasswordForStorage(
+        updateUser.newPassword,
+      );
+    }
+
+    await this.prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        username: nextUsername,
+        bio: nextBio,
+        password: nextPassword,
+      },
+    });
+
+    return this.findOne(nextUsername);
   }
 
   private formatMonthYear(date: Date) {
