@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   HttpCode,
@@ -18,6 +19,7 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -125,6 +127,40 @@ export class DiscussionsApiController {
       }
 
       return discussion;
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+
+      throw error;
+    }
+  }
+
+  @ApiOperation({ summary: 'Delete a discussion' })
+  @ApiBearerAuth()
+  @ApiNoContentResponse({ description: 'Discussion deleted.' })
+  @ApiForbiddenResponse({
+    description: 'You can only delete your own discussions.',
+  })
+  @ApiNotFoundResponse({ description: 'Discussion was not found.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
+  @Delete(':discussionId')
+  @HttpCode(204)
+  async deleteDiscussion(
+    @Param('discussionId', ParseIntPipe) discussionId: number,
+    @Req() request: Request,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+
+    try {
+      const deleted = await this.discussionsService.deleteDiscussion(
+        discussionId,
+        currentUser.username,
+      );
+
+      if (!deleted) {
+        throw new NotFoundException('Discussion not found.');
+      }
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;

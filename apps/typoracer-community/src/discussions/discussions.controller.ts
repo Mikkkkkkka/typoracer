@@ -31,6 +31,7 @@ export class DiscussionsController {
       title: 'Forums',
       currentUser: await this.authService.getCurrentUser(request),
       discussionCreated: request.query.created === '1',
+      discussionDeleted: request.query.deleted === '1',
       discussions: await this.discussionsService.getDiscussions(),
     };
   }
@@ -136,6 +137,40 @@ export class DiscussionsController {
       }
 
       return response.redirect(`/forums/${discussion.id}?updated=1`);
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        return response.redirect(
+          `/forums/${numericDiscussionId}?error=${encodeURIComponent(error.message)}`,
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  @Post(':discussionId/delete')
+  async deleteDiscussion(
+    @Param('discussionId') discussionId: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const numericDiscussionId = Number(discussionId);
+
+    try {
+      const deleted = await this.discussionsService.deleteDiscussion(
+        numericDiscussionId,
+        currentUser.username,
+      );
+
+      if (!deleted) {
+        return response.status(404).render('not-found', {
+          currentPath: '',
+          title: 'Discussion Not Found',
+        });
+      }
+
+      return response.redirect('/forums?deleted=1');
     } catch (error) {
       if (error instanceof ForbiddenException) {
         return response.redirect(

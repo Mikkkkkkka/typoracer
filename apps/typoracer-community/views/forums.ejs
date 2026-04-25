@@ -9,6 +9,9 @@
             <% if (discussionCreated) { %>
                 <p class="generic-form__success">Discussion created.</p>
             <% } %>
+            <% if (discussionDeleted) { %>
+                <p class="generic-form__success">Discussion deleted.</p>
+            <% } %>
         </div>
         <div class="forums-list">
             <% discussions.forEach((discussion) => { %>

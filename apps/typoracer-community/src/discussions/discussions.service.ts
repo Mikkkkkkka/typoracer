@@ -399,6 +399,38 @@ export class DiscussionsService {
     return this.mapDiscussion(updatedDiscussion);
   }
 
+  async deleteDiscussion(
+    discussionId: number,
+    authorUsername: string,
+  ): Promise<boolean> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { id: discussionId },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (!discussion) {
+      return false;
+    }
+
+    if (
+      discussion.author.username.toLowerCase() !== authorUsername.trim().toLowerCase()
+    ) {
+      throw new ForbiddenException('You can only delete your own discussions.');
+    }
+
+    await this.prisma.discussion.delete({
+      where: { id: discussionId },
+    });
+
+    return true;
+  }
+
   private mapDiscussion(discussion: {
     id: number;
     title: string;
