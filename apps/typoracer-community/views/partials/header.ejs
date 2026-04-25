@@ -1,4 +1,5 @@
 <header class="main-header margined">
+    <% const viewer = typeof currentUser !== 'undefined' ? currentUser : (locals.currentUser ?? null); %>
     <a class="logo" href="/">
         <img class="logo__image" src="/assets/keyboard-icon.svg" alt="Keyboard"/>
         <span class="logo__text">Typoracer</span>
@@ -11,8 +12,8 @@
         <a class="nav-bar__link" href="/quote-submission">submit quote</a>
     </nav>
     <div class="user-info">
-        <% if (currentUser) { %>
-            <span class="user-info__username"><%= currentUser.username %></span>
+        <% if (viewer) { %>
+            <a class="user-info__username-link" href="/users/me"><span class="user-info__username"><%= viewer.username %></span></a>
             <form action="/auth/logout" method="post">
                 <button class="user-info__button" type="submit">logout</button>
             </form>

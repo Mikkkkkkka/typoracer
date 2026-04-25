@@ -139,6 +139,15 @@ h3 {
     text-decoration: none;
 }
 
+.user-info__username-link {
+    color: inherit;
+}
+
+.user-info__username-link:hover {
+    color: #f3f4f6;
+    text-decoration: none;
+}
+
 .page-section {
     background: #1b1b1b;
     border: 1px solid #2f2f2f;

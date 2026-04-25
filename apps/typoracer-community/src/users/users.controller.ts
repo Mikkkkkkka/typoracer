@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, Req, Res } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import express from 'express';
+import type { Request, Response } from 'express';
+import { AuthService } from '../auth/auth.service';
 import { DiscussionsService } from '../discussions/discussions.service';
 import { UsersService } from './users.service';
 
@@ -8,14 +9,26 @@ import { UsersService } from './users.service';
 @Controller('users')
 export class UsersController {
   constructor(
+    private readonly authService: AuthService,
     private readonly usersService: UsersService,
     private readonly discussionsService: DiscussionsService,
   ) {}
 
+  @Get('me')
+  async getCurrentUserProfile(
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    return response.redirect(
+      `/users/${encodeURIComponent(currentUser.username)}`,
+    );
+  }
+
   @Get(':username')
   async getUserProfile(
     @Param('username') username: string,
-    @Res() res: express.Response,
+    @Res() res: Response,
   ) {
     const user = await this.usersService.findOne(username);
 
