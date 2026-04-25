@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   NotFoundException,
@@ -14,6 +15,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -21,6 +23,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
+import { AUTH_COOKIE_NAME } from '../auth/auth.constants';
 import { AuthService } from '../auth/auth.service';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
@@ -114,5 +117,38 @@ export class UsersApiController {
         user.username,
       ),
     };
+  }
+
+  @ApiOperation({ summary: 'Delete a user profile by username' })
+  @ApiBearerAuth()
+  @ApiNoContentResponse({ description: 'User deleted.' })
+  @ApiForbiddenResponse({
+    description: 'You can only delete your own profile.',
+  })
+  @ApiNotFoundResponse({ description: 'User was not found.' })
+  @Delete(':username')
+  async remove(
+    @Param('username') username: string,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+
+    if (currentUser.username.toLowerCase() !== username.trim().toLowerCase()) {
+      throw new ForbiddenException('You can only delete your own profile.');
+    }
+
+    const deleted = await this.usersService.deleteByUsername(username);
+
+    if (!deleted) {
+      throw new NotFoundException('User not found.');
+    }
+
+    response.clearCookie(AUTH_COOKIE_NAME, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
   }
 }

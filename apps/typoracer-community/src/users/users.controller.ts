@@ -142,6 +142,33 @@ export class UsersController {
     }
   }
 
+  @Post(':username/delete')
+  async deleteUserProfile(
+    @Param('username') username: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+
+    if (currentUser.username.toLowerCase() !== username.trim().toLowerCase()) {
+      return response.redirect(
+        `/users/${encodeURIComponent(username)}?error=${encodeURIComponent('You can only delete your own profile.')}`,
+      );
+    }
+
+    const deleted = await this.usersService.deleteByUsername(username);
+
+    if (!deleted) {
+      return response.status(404).render('not-found', {
+        currentPath: '',
+        title: 'User Not Found',
+      });
+    }
+
+    this.clearAuthCookie(response);
+    return response.redirect('/?accountDeleted=1');
+  }
+
   private async renderEditProfile(
     username: string,
     request: Request,
@@ -285,6 +312,15 @@ export class UsersController {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       maxAge: AUTH_TOKEN_TTL_SECONDS * 1000,
+      path: '/',
+    });
+  }
+
+  private clearAuthCookie(response: Response) {
+    response.clearCookie(AUTH_COOKIE_NAME, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
       path: '/',
     });
   }

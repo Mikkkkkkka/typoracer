@@ -211,6 +211,58 @@ export class UsersService {
     return this.findOne(nextUsername);
   }
 
+  async deleteByUsername(username: string): Promise<boolean> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!user) {
+      return false;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.discussionReply.deleteMany({
+        where: {
+          authorId: user.id,
+        },
+      });
+
+      await tx.discussion.deleteMany({
+        where: {
+          authorId: user.id,
+        },
+      });
+
+      await tx.attempt.deleteMany({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      await tx.quote.deleteMany({
+        where: {
+          authorId: user.id,
+        },
+      });
+
+      await tx.user.delete({
+        where: {
+          id: user.id,
+        },
+      });
+    });
+
+    return true;
+  }
+
   private formatMonthYear(date: Date) {
     return new Intl.DateTimeFormat('en-US', {
       month: 'long',
