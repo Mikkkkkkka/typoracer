@@ -12,22 +12,42 @@ const submissionRowTemplate = document.getElementById(
   'quote-submission-row-template',
 );
 const quoteFormError = document.getElementById('quote-form-error');
+const submitButton = document.getElementById('clear-form');
 
 let editingId = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeQuoteSubmissionPage);
+} else {
+  initializeQuoteSubmissionPage();
+}
+
+function initializeQuoteSubmissionPage() {
+  if (
+    !(quoteForm instanceof HTMLFormElement) ||
+    !(quoteText instanceof HTMLTextAreaElement) ||
+    !(quoteSource instanceof HTMLInputElement) ||
+    !(quoteFormError instanceof HTMLElement) ||
+    !(submitButton instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
   loadSubmissions();
   setupEventListeners();
-});
+}
 
 function setupEventListeners() {
   quoteForm.addEventListener('submit', handleFormSubmit);
+  submitButton.addEventListener('click', handleFormSubmit);
   quoteText.addEventListener('input', clearFormError);
   quoteSource.addEventListener('input', clearFormError);
 }
 
 async function handleFormSubmit(e) {
-  e.preventDefault();
+  if (e?.preventDefault) {
+    e.preventDefault();
+  }
 
   const formData = new FormData(quoteForm);
   const submissionInput = getSubmissionInputFromFormData(formData);
@@ -164,6 +184,10 @@ function loadSubmissions() {
 }
 
 function createSubmissionElement(submission) {
+  if (!(submissionRowTemplate instanceof HTMLTemplateElement)) {
+    return document.createElement('tr');
+  }
+
   const tr = submissionRowTemplate.content.firstElementChild.cloneNode(true);
   tr.dataset.id = submission.id;
 
@@ -268,7 +292,7 @@ function createStoredSubmission(payload, submissionInput) {
   return {
     id: String(payload?.id ?? Date.now()),
     text: String(payload?.text ?? submissionInput.text),
-    source: String(payload?.source ?? submissionInput.source || 'Unknown'),
+    source: String((payload?.source ?? submissionInput.source) || 'Unknown'),
     status: String(payload?.status ?? 'SUBMITTED'),
     createdAt: nowIso,
     updatedAt: nowIso,
