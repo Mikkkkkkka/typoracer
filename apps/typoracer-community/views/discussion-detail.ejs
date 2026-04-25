@@ -6,15 +6,15 @@
             <h1><%= discussion.title %></h1>
             <p><%= discussion.body %></p>
         </article>
-        <% if (currentUser) { %>
+        <% if (currentUsername) { %>
         <form
             class="card discussion-reply-form"
             id="discussion-reply-form"
             data-discussion-id="<%= discussion.id %>"
-            data-current-user="<%= currentUser %>"
+            data-current-user="<%= currentUsername %>"
         >
             <h2>Post a reply</h2>
-            <p class="discussion-reply-form__signed-in">Replying as <a href="/users/<%= currentUser %>"><%= currentUser %></a></p>
+            <p class="discussion-reply-form__signed-in">Replying as <a href="/users/<%= currentUsername %>"><%= currentUsername %></a></p>
             <label class="discussion-reply-form__label" for="reply-text">Reply</label>
             <textarea
                 class="discussion-reply-form__textarea"
