@@ -1,11 +1,13 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   NotFoundException,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -15,6 +17,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -31,6 +34,7 @@ import { CreateDiscussionReplyDto } from './dto/create-discussion-reply.dto';
 import { DiscussionDto } from './dto/discussion.dto';
 import { DiscussionReplyEnvelopeDto } from './dto/discussion-reply-envelope.dto';
 import { DiscussionReplyDto } from './dto/discussion-reply.dto';
+import { UpdateDiscussionDto } from './dto/update-discussion.dto';
 import { DiscussionsService } from './discussions.service';
 
 @ApiTags('discussions')
@@ -90,6 +94,44 @@ export class DiscussionsApiController {
     }
 
     return discussion;
+  }
+
+  @ApiOperation({ summary: 'Update a discussion' })
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: DiscussionDto })
+  @ApiBadRequestResponse({ description: 'Invalid discussion payload.' })
+  @ApiForbiddenResponse({
+    description: 'You can only edit your own discussions.',
+  })
+  @ApiNotFoundResponse({ description: 'Discussion was not found.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
+  @Patch(':discussionId')
+  async updateDiscussion(
+    @Param('discussionId', ParseIntPipe) discussionId: number,
+    @Body() body: UpdateDiscussionDto,
+    @Req() request: Request,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+
+    try {
+      const discussion = await this.discussionsService.updateDiscussion(
+        discussionId,
+        currentUser.username,
+        body,
+      );
+
+      if (!discussion) {
+        throw new NotFoundException('Discussion not found.');
+      }
+
+      return discussion;
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+
+      throw error;
+    }
   }
 
   @ApiOperation({ summary: 'Get discussion details' })

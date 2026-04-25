@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   PaginatedResult,
   PaginationParams,
@@ -332,6 +336,67 @@ export class DiscussionsService {
     });
 
     return this.mapDiscussion(discussion);
+  }
+
+  async updateDiscussion(
+    discussionId: number,
+    authorUsername: string,
+    input: {
+      title?: string;
+      excerpt?: string;
+      body?: string;
+    },
+  ): Promise<Discussion | undefined> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { id: discussionId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (!discussion) {
+      return undefined;
+    }
+
+    if (
+      discussion.author.username.toLowerCase() !== authorUsername.trim().toLowerCase()
+    ) {
+      throw new ForbiddenException('You can only edit your own discussions.');
+    }
+
+    const updatedDiscussion = await this.prisma.discussion.update({
+      where: { id: discussionId },
+      data: {
+        title: input.title === undefined ? undefined : input.title.trim(),
+        excerpt:
+          input.excerpt === undefined ? undefined : input.excerpt.trim(),
+        body: input.body === undefined ? undefined : input.body.trim(),
+      },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+        replies: {
+          orderBy: { id: 'asc' },
+          include: {
+            author: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return this.mapDiscussion(updatedDiscussion);
   }
 
   private mapDiscussion(discussion: {
