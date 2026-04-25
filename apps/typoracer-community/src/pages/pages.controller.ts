@@ -15,6 +15,7 @@ export class PagesController {
       currentPath: '/',
       title: 'Typoracer Community',
       currentUser: await this.authService.getCurrentUser(request),
+      accountDeleted: request.query.accountDeleted === '1',
     };
   }
 

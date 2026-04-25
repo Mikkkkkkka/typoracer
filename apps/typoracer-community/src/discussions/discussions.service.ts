@@ -320,7 +320,8 @@ export class DiscussionsService {
     }
 
     if (
-      reply.author.username.toLowerCase() !== authorUsername.trim().toLowerCase()
+      reply.author.username.toLowerCase() !==
+      authorUsername.trim().toLowerCase()
     ) {
       throw new ForbiddenException('You can only edit your own replies.');
     }
@@ -370,7 +371,8 @@ export class DiscussionsService {
     }
 
     if (
-      reply.author.username.toLowerCase() !== authorUsername.trim().toLowerCase()
+      reply.author.username.toLowerCase() !==
+      authorUsername.trim().toLowerCase()
     ) {
       throw new ForbiddenException('You can only delete your own replies.');
     }
@@ -382,7 +384,9 @@ export class DiscussionsService {
     return true;
   }
 
-  async createDiscussion(input: CreateDiscussion): Promise<Discussion | undefined> {
+  async createDiscussion(
+    input: CreateDiscussion,
+  ): Promise<Discussion | undefined> {
     const author = await this.prisma.user.findFirst({
       where: {
         username: {
@@ -454,7 +458,8 @@ export class DiscussionsService {
     }
 
     if (
-      discussion.author.username.toLowerCase() !== authorUsername.trim().toLowerCase()
+      discussion.author.username.toLowerCase() !==
+      authorUsername.trim().toLowerCase()
     ) {
       throw new ForbiddenException('You can only edit your own discussions.');
     }
@@ -463,8 +468,7 @@ export class DiscussionsService {
       where: { id: discussionId },
       data: {
         title: input.title === undefined ? undefined : input.title.trim(),
-        excerpt:
-          input.excerpt === undefined ? undefined : input.excerpt.trim(),
+        excerpt: input.excerpt === undefined ? undefined : input.excerpt.trim(),
         body: input.body === undefined ? undefined : input.body.trim(),
       },
       include: {
@@ -509,7 +513,8 @@ export class DiscussionsService {
     }
 
     if (
-      discussion.author.username.toLowerCase() !== authorUsername.trim().toLowerCase()
+      discussion.author.username.toLowerCase() !==
+      authorUsername.trim().toLowerCase()
     ) {
       throw new ForbiddenException('You can only delete your own discussions.');
     }
