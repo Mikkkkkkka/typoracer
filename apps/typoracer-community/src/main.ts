@@ -35,6 +35,7 @@ async function bootstrap() {
     .setTitle('Typoracer Community API')
     .setDescription('REST API for the Typoracer community backend.')
     .setVersion('1.0.0')
+    .addBearerAuth()
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, swaggerDocument);

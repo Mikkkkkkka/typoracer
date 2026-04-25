@@ -11,7 +11,15 @@
         <a class="nav-bar__link" href="/quote-submission">submit quote</a>
     </nav>
     <div class="user-info">
-        <span class="user-info__username">guest</span>
+        <% if (currentUser) { %>
+            <span class="user-info__username"><%= currentUser.username %></span>
+            <form action="/auth/logout" method="post">
+                <button class="user-info__button" type="submit">logout</button>
+            </form>
+        <% } else { %>
+            <a class="user-info__button" href="/auth/login">sign in</a>
+            <a class="user-info__button" href="/auth/register">register</a>
+        <% } %>
         <img class="user-info__image" src="/assets/user-icon.svg" alt="User"/>
     </div>
 </header>

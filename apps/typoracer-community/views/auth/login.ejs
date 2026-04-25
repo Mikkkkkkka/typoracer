@@ -1,0 +1,18 @@
+<main class="page-content">
+    <section class="page-section page-section--narrow">
+        <div class="section-intro">
+            <h1>Sign in</h1>
+            <p class="text-section__paragraph">Use your Typoracer Community account to continue.</p>
+        </div>
+        <form class="generic-form__container" action="/auth/login" method="post">
+            <label class="generic-form__label" for="username">Username</label>
+            <input id="username" class="generic-form__text-input" type="text" name="username" minlength="3" required />
+
+            <label class="generic-form__label" for="password">Password</label>
+            <input id="password" class="generic-form__text-input" type="password" name="password" minlength="8" required />
+
+            <button class="generic-form__submit-button" type="submit">Sign in</button>
+        </form>
+        <p class="text-section__paragraph">Need an account? <a href="/auth/register">Create one here</a>.</p>
+    </section>
+</main>

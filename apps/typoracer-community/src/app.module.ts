@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from './auth/auth.module';
 import { DiscussionsModule } from './discussions/discussions.module';
 import { PagesModule } from './pages/pages.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -9,6 +10,7 @@ import { AttemptsModule } from './attempts/attempts.module';
 @Module({
   imports: [
     PrismaModule,
+    AuthModule,
     QuotesModule,
     DiscussionsModule,
     UsersModule,
