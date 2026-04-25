@@ -1,18 +1,13 @@
 import {
-  Body,
   Controller,
   Get,
-  NotFoundException,
   Param,
   ParseIntPipe,
-  Post,
   Query,
   Req,
   Res,
 } from '@nestjs/common';
 import {
-  ApiBadRequestResponse,
-  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -22,43 +17,13 @@ import {
 import type { Request, Response } from 'express';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
-import { QuoteRecordsPayloadDto } from '../quotes/dto/quote-records-payload.dto';
-import { QuoteRecordsService } from '../quotes/quote-records.service';
 import { AttemptsService } from './attempts.service';
 import { AttemptDto } from './dto/attempt.dto';
-import { CreateAttemptDto } from './dto/create-attempt.dto';
 
 @ApiTags('quotes')
 @Controller('api/quotes/:quoteId/attempts')
 export class QuoteAttemptsApiController {
-  constructor(
-    private readonly attemptsService: AttemptsService,
-    private readonly quoteRecordsService: QuoteRecordsService,
-  ) {}
-
-  @ApiOperation({ summary: 'Create an attempt for a quote' })
-  @ApiCreatedResponse({ type: QuoteRecordsPayloadDto })
-  @ApiBadRequestResponse({ description: 'Invalid attempt payload.' })
-  @ApiNotFoundResponse({ description: 'Quote or user was not found.' })
-  @Post()
-  async create(
-    @Param('quoteId', ParseIntPipe) quoteId: number,
-    @Body() body: CreateAttemptDto,
-  ) {
-    await this.attemptsService.create({
-      ...body,
-      quoteId,
-      maxRawWpm: body.maxRawWpm ?? body.wpm,
-    });
-
-    const payload = await this.quoteRecordsService.findPayload(quoteId);
-
-    if (!payload) {
-      throw new NotFoundException('Quote not found.');
-    }
-
-    return payload;
-  }
+  constructor(private readonly attemptsService: AttemptsService) {}
 
   @ApiOperation({ summary: 'List attempts for a quote' })
   @ApiQuery({ name: 'page', required: false, type: Number })
