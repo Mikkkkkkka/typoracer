@@ -92,6 +92,20 @@ export class QuotesApiController {
     return quote;
   }
 
+  @ApiOperation({ summary: 'Get quote details with records' })
+  @ApiOkResponse({ type: QuoteDetailDto })
+  @ApiNotFoundResponse({ description: 'Quote was not found.' })
+  @Get(':quoteId')
+  async findOne(@Param('quoteId', ParseIntPipe) quoteId: number) {
+    const quote = await this.quotesService.findOne(quoteId);
+
+    if (!quote) {
+      throw new NotFoundException('Quote not found.');
+    }
+
+    return quote;
+  }
+
   @ApiOperation({ summary: 'Update a submitted quote' })
   @ApiBearerAuth()
   @ApiOkResponse({ type: QuoteSubmissionResponseDto })
@@ -128,19 +142,5 @@ export class QuotesApiController {
 
       throw error;
     }
-  }
-
-  @ApiOperation({ summary: 'Get quote details with records' })
-  @ApiOkResponse({ type: QuoteDetailDto })
-  @ApiNotFoundResponse({ description: 'Quote was not found.' })
-  @Get(':quoteId')
-  async findOne(@Param('quoteId', ParseIntPipe) quoteId: number) {
-    const quote = await this.quotesService.findOne(quoteId);
-
-    if (!quote) {
-      throw new NotFoundException('Quote not found.');
-    }
-
-    return quote;
   }
 }
