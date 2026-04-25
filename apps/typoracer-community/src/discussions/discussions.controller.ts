@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Post,
@@ -86,6 +87,66 @@ export class DiscussionsController {
     return this.renderDiscussionDetail(Number(discussionId), request, res);
   }
 
+  @Get(':discussionId/edit')
+  async getEditDiscussionPage(
+    @Param('discussionId') discussionId: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    await this.authService.requireCurrentUser(request);
+    return this.renderEditDiscussionPage(Number(discussionId), request, response);
+  }
+
+  @Post(':discussionId/edit')
+  async updateDiscussion(
+    @Param('discussionId') discussionId: string,
+    @Body() body: CreateDiscussionFormDto,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const numericDiscussionId = Number(discussionId);
+    const form = this.normalizeDiscussionForm(body);
+    const validationError = this.validateDiscussionForm(form);
+
+    if (validationError) {
+      return this.renderEditDiscussionPage(
+        numericDiscussionId,
+        request,
+        response,
+        {
+          error: validationError,
+          form,
+        },
+      );
+    }
+
+    try {
+      const discussion = await this.discussionsService.updateDiscussion(
+        numericDiscussionId,
+        currentUser.username,
+        form,
+      );
+
+      if (!discussion) {
+        return response.status(404).render('not-found', {
+          currentPath: '',
+          title: 'Discussion Not Found',
+        });
+      }
+
+      return response.redirect(`/forums/${discussion.id}?updated=1`);
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        return response.redirect(
+          `/forums/${numericDiscussionId}?error=${encodeURIComponent(error.message)}`,
+        );
+      }
+
+      throw error;
+    }
+  }
+
   @Post(':discussionId/replies')
   async createReply(
     @Param('discussionId') discussionId: string,
@@ -164,11 +225,61 @@ export class DiscussionsController {
       currentUser,
       currentUsername: currentUser?.username ?? null,
       discussionCreated: request.query.created === '1',
+      discussionUpdated: request.query.updated === '1',
       replyFormError: options?.error ?? this.getQueryMessage(request, 'error'),
       replyFormSuccess:
         request.query.replyPosted === '1' ? 'Reply posted.' : null,
       replyDraftText: options?.draftReplyText ?? '',
       discussion,
+    });
+  }
+
+  private async renderEditDiscussionPage(
+    discussionId: number,
+    request: Request,
+    response: Response,
+    options?: {
+      error?: string;
+      form?: {
+        title: string;
+        excerpt: string;
+        body: string;
+      };
+    },
+  ) {
+    const [discussion, currentUser] = await Promise.all([
+      this.discussionsService.getDiscussionById(discussionId),
+      this.authService.getCurrentUser(request),
+    ]);
+
+    if (!discussion) {
+      return response.status(404).render('not-found', {
+        currentPath: '',
+        title: 'Discussion Not Found',
+      });
+    }
+
+    if (
+      !currentUser ||
+      currentUser.username.toLowerCase() !== discussion.author.toLowerCase()
+    ) {
+      return response.redirect(
+        `/forums/${discussionId}?error=${encodeURIComponent('You can only edit your own discussions.')}`,
+      );
+    }
+
+    return response.render('edit-discussion', {
+      currentPath: '/forums',
+      title: `Edit ${discussion.title}`,
+      currentUser,
+      discussion,
+      discussionFormError:
+        options?.error ?? this.getQueryMessage(request, 'error'),
+      formValues: options?.form ?? {
+        title: discussion.title,
+        excerpt: discussion.excerpt,
+        body: discussion.body,
+      },
     });
   }
 

@@ -7,6 +7,12 @@
             <% if (discussionCreated) { %>
             <p class="generic-form__success">Discussion created.</p>
             <% } %>
+            <% if (discussionUpdated) { %>
+            <p class="generic-form__success">Discussion updated.</p>
+            <% } %>
+            <% if (currentUsername && currentUsername.toLowerCase() === discussion.author.toLowerCase()) { %>
+            <p><a href="/forums/<%= discussion.id %>/edit">Edit discussion</a></p>
+            <% } %>
             <p><%= discussion.body %></p>
         </article>
         <% if (currentUsername) { %>

@@ -1,0 +1,53 @@
+<main class="page-content">
+    <section class="page-section page-section--narrow">
+        <div class="section-intro">
+            <p class="discussion-card__meta">Editing discussion by <a href="/users/<%= encodeURIComponent(discussion.author) %>"><%= discussion.author %></a></p>
+            <h1>Edit discussion</h1>
+        </div>
+
+        <form class="generic-form" action="/forums/<%= discussion.id %>/edit" method="post">
+            <div class="generic-form__container">
+                <label class="generic-form__label" for="title">Title</label>
+                <input
+                    id="title"
+                    class="generic-form__text-input"
+                    type="text"
+                    name="title"
+                    maxlength="120"
+                    required
+                    value="<%= formValues.title %>"
+                />
+
+                <label class="generic-form__label" for="excerpt">Excerpt</label>
+                <input
+                    id="excerpt"
+                    class="generic-form__text-input"
+                    type="text"
+                    name="excerpt"
+                    maxlength="240"
+                    required
+                    value="<%= formValues.excerpt %>"
+                />
+
+                <label class="generic-form__label" for="body">Body</label>
+                <textarea
+                    id="body"
+                    class="generic-form__textarea"
+                    name="body"
+                    maxlength="5000"
+                    required
+                    placeholder="Write the full discussion text here."
+                ><%= formValues.body %></textarea>
+
+                <% if (discussionFormError) { %>
+                    <p class="generic-form__error" role="alert"><%= discussionFormError %></p>
+                <% } %>
+
+                <div class="generic-form__actions">
+                    <button class="generic-form__submit-button" type="submit">Save changes</button>
+                    <a class="generic-form__secondary-link" href="/forums/<%= discussion.id %>">Back to discussion</a>
+                </div>
+            </div>
+        </form>
+    </section>
+</main>
