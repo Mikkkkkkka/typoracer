@@ -267,6 +267,43 @@ export class DiscussionsController {
     }
   }
 
+  @Post(':discussionId/replies/:replyId/delete')
+  async deleteReply(
+    @Param('discussionId') discussionId: string,
+    @Param('replyId') replyId: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const numericDiscussionId = Number(discussionId);
+    const numericReplyId = Number(replyId);
+
+    try {
+      const deleted = await this.discussionsService.deleteReply(
+        numericDiscussionId,
+        numericReplyId,
+        currentUser.username,
+      );
+
+      if (!deleted) {
+        return response.status(404).render('not-found', {
+          currentPath: '',
+          title: 'Reply Not Found',
+        });
+      }
+
+      return response.redirect(`/forums/${numericDiscussionId}?replyDeleted=1`);
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        return response.redirect(
+          `/forums/${numericDiscussionId}?error=${encodeURIComponent(error.message)}`,
+        );
+      }
+
+      throw error;
+    }
+  }
+
   @Post(':discussionId/replies')
   async createReply(
     @Param('discussionId') discussionId: string,
@@ -350,6 +387,7 @@ export class DiscussionsController {
       replyFormSuccess:
         request.query.replyPosted === '1' ? 'Reply posted.' : null,
       replyUpdated: request.query.replyUpdated === '1',
+      replyDeleted: request.query.replyDeleted === '1',
       replyDraftText: options?.draftReplyText ?? '',
       discussion,
     });

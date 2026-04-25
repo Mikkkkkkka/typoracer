@@ -307,4 +307,40 @@ export class DiscussionsApiController {
       throw error;
     }
   }
+
+  @ApiOperation({ summary: 'Delete a reply in a discussion' })
+  @ApiBearerAuth()
+  @ApiNoContentResponse({ description: 'Reply deleted.' })
+  @ApiForbiddenResponse({
+    description: 'You can only delete your own replies.',
+  })
+  @ApiNotFoundResponse({ description: 'Reply was not found.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
+  @Delete(':discussionId/replies/:replyId')
+  @HttpCode(204)
+  async deleteReply(
+    @Param('discussionId', ParseIntPipe) discussionId: number,
+    @Param('replyId', ParseIntPipe) replyId: number,
+    @Req() request: Request,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+
+    try {
+      const deleted = await this.discussionsService.deleteReply(
+        discussionId,
+        replyId,
+        currentUser.username,
+      );
+
+      if (!deleted) {
+        throw new NotFoundException('Reply not found.');
+      }
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+
+      throw error;
+    }
+  }
 }

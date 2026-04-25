@@ -346,6 +346,42 @@ export class DiscussionsService {
     };
   }
 
+  async deleteReply(
+    discussionId: number,
+    replyId: number,
+    authorUsername: string,
+  ): Promise<boolean> {
+    const reply = await this.prisma.discussionReply.findFirst({
+      where: {
+        id: replyId,
+        discussionId,
+      },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (!reply) {
+      return false;
+    }
+
+    if (
+      reply.author.username.toLowerCase() !== authorUsername.trim().toLowerCase()
+    ) {
+      throw new ForbiddenException('You can only delete your own replies.');
+    }
+
+    await this.prisma.discussionReply.delete({
+      where: { id: replyId },
+    });
+
+    return true;
+  }
+
   async createDiscussion(input: CreateDiscussion): Promise<Discussion | undefined> {
     const author = await this.prisma.user.findFirst({
       where: {
