@@ -96,7 +96,11 @@ export class DiscussionsController {
     @Res() response: Response,
   ) {
     await this.authService.requireCurrentUser(request);
-    return this.renderEditDiscussionPage(Number(discussionId), request, response);
+    return this.renderEditDiscussionPage(
+      Number(discussionId),
+      request,
+      response,
+    );
   }
 
   @Post(':discussionId/edit')
@@ -503,7 +507,8 @@ export class DiscussionsController {
       currentPath: '/forums',
       title: 'Start Discussion',
       currentUser: await this.authService.getCurrentUser(request),
-      discussionFormError: options?.error ?? this.getQueryMessage(request, 'error'),
+      discussionFormError:
+        options?.error ?? this.getQueryMessage(request, 'error'),
       formValues: options?.form ?? {
         title: '',
         excerpt: '',

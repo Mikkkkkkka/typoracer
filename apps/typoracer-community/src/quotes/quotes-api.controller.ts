@@ -1,31 +1,43 @@
 import {
   Controller,
   Get,
+  Post,
   NotFoundException,
   Param,
   ParseIntPipe,
   Query,
   Req,
   Res,
+  Body,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
+import { AuthService } from '../auth/auth.service';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
+import { CreateQuoteSubmissionDto } from './dto/create-quote-submission.dto';
 import { QuoteDetailDto } from './dto/quote-detail.dto';
+import { QuoteSubmissionResponseDto } from './dto/quote-submission-response.dto';
 import { QuoteSummaryDto } from './dto/quote-summary.dto';
 import { QuotesService } from './quotes.service';
 
 @ApiTags('quotes')
 @Controller('api/quotes')
 export class QuotesApiController {
-  constructor(private readonly quotesService: QuotesService) {}
+  constructor(
+    private readonly quotesService: QuotesService,
+    private readonly authService: AuthService,
+  ) {}
 
   @ApiOperation({ summary: 'List approved quotes' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -49,6 +61,31 @@ export class QuotesApiController {
     }
 
     return result.items;
+  }
+
+  @ApiOperation({ summary: 'Submit a quote for moderation' })
+  @ApiBearerAuth()
+  @ApiCreatedResponse({ type: QuoteSubmissionResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid quote payload.' })
+  @ApiNotFoundResponse({ description: 'Author was not found.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
+  @Post()
+  async create(
+    @Body() body: CreateQuoteSubmissionDto,
+    @Req() request: Request,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const quote = await this.quotesService.submitQuote({
+      authorUsername: currentUser.username,
+      text: body.text,
+      source: body.source,
+    });
+
+    if (!quote) {
+      throw new NotFoundException('Author not found.');
+    }
+
+    return quote;
   }
 
   @ApiOperation({ summary: 'Get quote details with records' })

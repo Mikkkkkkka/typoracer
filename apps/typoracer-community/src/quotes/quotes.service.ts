@@ -88,6 +88,48 @@ export class QuotesService {
     };
   }
 
+  async submitQuote(input: {
+    authorUsername: string;
+    text: string;
+    source?: string;
+  }) {
+    const author = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: input.authorUsername.trim(),
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!author) {
+      return undefined;
+    }
+
+    const source = input.source?.trim() || null;
+    const quote = await this.prisma.quote.create({
+      data: {
+        authorId: author.id,
+        image: null,
+        alt: source || 'Submitted quote',
+        text: input.text.trim(),
+        source,
+        status: 'SUBMITTED',
+      },
+      select: {
+        id: true,
+        text: true,
+        source: true,
+        status: true,
+      },
+    });
+
+    return quote;
+  }
+
   private formatLongDate(date: Date) {
     return new Intl.DateTimeFormat('ru-RU', {
       day: 'numeric',
