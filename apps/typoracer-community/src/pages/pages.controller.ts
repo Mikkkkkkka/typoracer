@@ -1,22 +1,30 @@
-import { Controller, Get, Render, Res } from '@nestjs/common';
+import { Controller, Get, Render, Req, Res } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import express from 'express';
+import type { Request, Response } from 'express';
+import { AuthService } from '../auth/auth.service';
 
 @ApiExcludeController()
 @Controller()
 export class PagesController {
+  constructor(private readonly authService: AuthService) {}
+
   @Get()
   @Render('home')
-  getHome() {
-    return { currentPath: '/', title: 'Typoracer Community' };
+  async getHome(@Req() request: Request) {
+    return {
+      currentPath: '/',
+      title: 'Typoracer Community',
+      currentUser: await this.authService.getCurrentUser(request),
+    };
   }
 
   @Get('leaderboard')
   @Render('leaderboard')
-  getLeaderboard() {
+  async getLeaderboard(@Req() request: Request) {
     return {
       currentPath: '/leaderboard',
       title: 'Typoracer Leaderboard',
+      currentUser: await this.authService.getCurrentUser(request),
       users: [
         { name: 'SpeedyFox', wpm: 102, acc: 99 },
         { name: 'KeyMaster', wpm: 97, acc: 96 },
@@ -27,18 +35,20 @@ export class PagesController {
 
   @Get('quote-submission')
   @Render('quote-submission')
-  getQuoteSubmission() {
+  async getQuoteSubmission(@Req() request: Request) {
     return {
       currentPath: '/quote-submission',
       title: 'Typoracer Quote submission',
+      currentUser: await this.authService.getCurrentUser(request),
     };
   }
 
   @Get('*')
-  getNotFound(@Res() res: express.Response) {
+  async getNotFound(@Req() request: Request, @Res() res: Response) {
     return res.status(404).render('not-found', {
       currentPath: '',
       title: 'Page Not Found',
+      currentUser: await this.authService.getCurrentUser(request),
     });
   }
 }
