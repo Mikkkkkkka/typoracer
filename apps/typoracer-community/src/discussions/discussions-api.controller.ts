@@ -37,6 +37,7 @@ import { DiscussionDto } from './dto/discussion.dto';
 import { DiscussionReplyEnvelopeDto } from './dto/discussion-reply-envelope.dto';
 import { DiscussionReplyDto } from './dto/discussion-reply.dto';
 import { UpdateDiscussionDto } from './dto/update-discussion.dto';
+import { UpdateDiscussionReplyDto } from './dto/update-discussion-reply.dto';
 import { DiscussionsService } from './discussions.service';
 
 @ApiTags('discussions')
@@ -265,5 +266,45 @@ export class DiscussionsApiController {
     }
 
     return { reply };
+  }
+
+  @ApiOperation({ summary: 'Update a reply in a discussion' })
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: DiscussionReplyDto })
+  @ApiBadRequestResponse({ description: 'Invalid reply payload.' })
+  @ApiForbiddenResponse({
+    description: 'You can only edit your own replies.',
+  })
+  @ApiNotFoundResponse({ description: 'Reply was not found.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
+  @Patch(':discussionId/replies/:replyId')
+  async updateReply(
+    @Param('discussionId', ParseIntPipe) discussionId: number,
+    @Param('replyId', ParseIntPipe) replyId: number,
+    @Body() body: UpdateDiscussionReplyDto,
+    @Req() request: Request,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+
+    try {
+      const reply = await this.discussionsService.updateReply(
+        discussionId,
+        replyId,
+        currentUser.username,
+        body.text,
+      );
+
+      if (!reply) {
+        throw new NotFoundException('Reply not found.');
+      }
+
+      return reply;
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+
+      throw error;
+    }
   }
 }

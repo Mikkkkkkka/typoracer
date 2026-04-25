@@ -1,4 +1,5 @@
 export interface DiscussionReply {
+  id: number;
   author: string;
   text: string;
 }

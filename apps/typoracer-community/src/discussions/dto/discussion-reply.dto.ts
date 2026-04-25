@@ -1,6 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class DiscussionReplyDto {
+  @ApiProperty({ example: 12 })
+  id!: number;
+
   @ApiProperty({ example: 'SpeedyFox' })
   author!: string;
 

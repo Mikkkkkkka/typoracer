@@ -123,6 +123,7 @@ export class DiscussionsService {
     });
 
     const mappedReplies = replies.map((reply) => ({
+      id: reply.id,
       author: reply.author.username,
       text: reply.text,
     }));
@@ -160,6 +161,7 @@ export class DiscussionsService {
     }
 
     return {
+      id: reply.id,
       author: reply.author.username,
       text: reply.text,
     };
@@ -287,8 +289,60 @@ export class DiscussionsService {
     });
 
     return {
+      id: nextReply.id,
       author: nextReply.author.username,
       text: nextReply.text,
+    };
+  }
+
+  async updateReply(
+    discussionId: number,
+    replyId: number,
+    authorUsername: string,
+    text: string,
+  ): Promise<DiscussionReply | undefined> {
+    const reply = await this.prisma.discussionReply.findFirst({
+      where: {
+        id: replyId,
+        discussionId,
+      },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (!reply) {
+      return undefined;
+    }
+
+    if (
+      reply.author.username.toLowerCase() !== authorUsername.trim().toLowerCase()
+    ) {
+      throw new ForbiddenException('You can only edit your own replies.');
+    }
+
+    const updatedReply = await this.prisma.discussionReply.update({
+      where: { id: replyId },
+      data: {
+        text: text.trim(),
+      },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    return {
+      id: updatedReply.id,
+      author: updatedReply.author.username,
+      text: updatedReply.text,
     };
   }
 
@@ -437,7 +491,7 @@ export class DiscussionsService {
     excerpt: string;
     body: string;
     author: { username: string };
-    replies: Array<{ text: string; author: { username: string } }>;
+    replies: Array<{ id: number; text: string; author: { username: string } }>;
   }): Discussion {
     return {
       id: discussion.id,
@@ -446,6 +500,7 @@ export class DiscussionsService {
       excerpt: discussion.excerpt,
       body: discussion.body,
       replies: discussion.replies.map((reply) => ({
+        id: reply.id,
         author: reply.author.username,
         text: reply.text,
       })),

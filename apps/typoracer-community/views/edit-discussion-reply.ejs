@@ -1,0 +1,31 @@
+<main class="page-content">
+    <section class="page-section page-section--narrow">
+        <div class="section-intro">
+            <p class="discussion-card__meta">Editing reply in <a href="/forums/<%= discussion.id %>"><%= discussion.title %></a></p>
+            <h1>Edit reply</h1>
+        </div>
+
+        <form class="generic-form" action="/forums/<%= discussion.id %>/replies/<%= reply.id %>/edit" method="post">
+            <div class="generic-form__container">
+                <label class="generic-form__label" for="text">Reply</label>
+                <textarea
+                    id="text"
+                    class="generic-form__textarea"
+                    name="text"
+                    maxlength="2000"
+                    required
+                    placeholder="Write something useful."
+                ><%= formValues.text %></textarea>
+
+                <% if (replyFormError) { %>
+                    <p class="generic-form__error" role="alert"><%= replyFormError %></p>
+                <% } %>
+
+                <div class="generic-form__actions">
+                    <button class="generic-form__submit-button" type="submit">Save changes</button>
+                    <a class="generic-form__secondary-link" href="/forums/<%= discussion.id %>#reply-<%= reply.id %>">Back to discussion</a>
+                </div>
+            </div>
+        </form>
+    </section>
+</main>

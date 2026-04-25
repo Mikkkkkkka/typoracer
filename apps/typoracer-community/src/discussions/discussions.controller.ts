@@ -13,6 +13,7 @@ import { ApiExcludeController } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { CreateDiscussionFormDto } from './dto/create-discussion-form.dto';
+import { UpdateDiscussionReplyFormDto } from './dto/update-discussion-reply-form.dto';
 import { DiscussionsService } from './discussions.service';
 
 @ApiExcludeController()
@@ -182,6 +183,90 @@ export class DiscussionsController {
     }
   }
 
+  @Get(':discussionId/replies/:replyId/edit')
+  async getEditReplyPage(
+    @Param('discussionId') discussionId: string,
+    @Param('replyId') replyId: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    await this.authService.requireCurrentUser(request);
+    return this.renderEditReplyPage(
+      Number(discussionId),
+      Number(replyId),
+      request,
+      response,
+    );
+  }
+
+  @Post(':discussionId/replies/:replyId/edit')
+  async updateReply(
+    @Param('discussionId') discussionId: string,
+    @Param('replyId') replyId: string,
+    @Body() body: UpdateDiscussionReplyFormDto,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const numericDiscussionId = Number(discussionId);
+    const numericReplyId = Number(replyId);
+    const text = body.text?.trim() ?? '';
+
+    if (!text) {
+      return this.renderEditReplyPage(
+        numericDiscussionId,
+        numericReplyId,
+        request,
+        response,
+        {
+          error: 'Reply text is required.',
+          text: body.text ?? '',
+        },
+      );
+    }
+
+    if (text.length > 2000) {
+      return this.renderEditReplyPage(
+        numericDiscussionId,
+        numericReplyId,
+        request,
+        response,
+        {
+          error: 'Reply text must be 2000 characters or fewer.',
+          text: body.text ?? '',
+        },
+      );
+    }
+
+    try {
+      const reply = await this.discussionsService.updateReply(
+        numericDiscussionId,
+        numericReplyId,
+        currentUser.username,
+        text,
+      );
+
+      if (!reply) {
+        return response.status(404).render('not-found', {
+          currentPath: '',
+          title: 'Reply Not Found',
+        });
+      }
+
+      return response.redirect(
+        `/forums/${numericDiscussionId}?replyUpdated=1#reply-${reply.id}`,
+      );
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        return response.redirect(
+          `/forums/${numericDiscussionId}?error=${encodeURIComponent(error.message)}`,
+        );
+      }
+
+      throw error;
+    }
+  }
+
   @Post(':discussionId/replies')
   async createReply(
     @Param('discussionId') discussionId: string,
@@ -264,8 +349,54 @@ export class DiscussionsController {
       replyFormError: options?.error ?? this.getQueryMessage(request, 'error'),
       replyFormSuccess:
         request.query.replyPosted === '1' ? 'Reply posted.' : null,
+      replyUpdated: request.query.replyUpdated === '1',
       replyDraftText: options?.draftReplyText ?? '',
       discussion,
+    });
+  }
+
+  private async renderEditReplyPage(
+    discussionId: number,
+    replyId: number,
+    request: Request,
+    response: Response,
+    options?: {
+      error?: string;
+      text?: string;
+    },
+  ) {
+    const [discussion, currentUser, reply] = await Promise.all([
+      this.discussionsService.getDiscussionById(discussionId),
+      this.authService.getCurrentUser(request),
+      this.discussionsService.getReplyById(discussionId, replyId),
+    ]);
+
+    if (!discussion || !reply) {
+      return response.status(404).render('not-found', {
+        currentPath: '',
+        title: 'Reply Not Found',
+      });
+    }
+
+    if (
+      !currentUser ||
+      currentUser.username.toLowerCase() !== reply.author.toLowerCase()
+    ) {
+      return response.redirect(
+        `/forums/${discussionId}?error=${encodeURIComponent('You can only edit your own replies.')}`,
+      );
+    }
+
+    return response.render('edit-discussion-reply', {
+      currentPath: '/forums',
+      title: `Edit Reply`,
+      currentUser,
+      discussion,
+      reply,
+      replyFormError: options?.error ?? this.getQueryMessage(request, 'error'),
+      formValues: {
+        text: options?.text ?? reply.text,
+      },
     });
   }
 

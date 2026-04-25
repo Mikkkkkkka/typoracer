@@ -48,10 +48,16 @@
         <% } %>
         <div class="discussion-replies">
             <h2>Replies</h2>
+            <% if (replyUpdated) { %>
+            <p class="generic-form__success">Reply updated.</p>
+            <% } %>
             <div class="discussion-replies__list" id="discussion-replies-list">
             <% discussion.replies.forEach((reply) => { %>
-                <article class="card discussion-reply">
+                <article class="card discussion-reply" id="reply-<%= reply.id %>">
                     <p class="discussion-reply__author"><a href="/users/<%= reply.author %>"><%= reply.author %></a></p>
+                    <% if (currentUsername && currentUsername.toLowerCase() === reply.author.toLowerCase()) { %>
+                    <p><a href="/forums/<%= discussion.id %>/replies/<%= reply.id %>/edit">Edit reply</a></p>
+                    <% } %>
                     <p><%= reply.text %></p>
                 </article>
             <% }) %>
