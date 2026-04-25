@@ -8,6 +8,13 @@ export interface CreateDiscussionReply {
   text: string;
 }
 
+export interface CreateDiscussion {
+  author: string;
+  title: string;
+  excerpt: string;
+  body: string;
+}
+
 export interface Discussion {
   id: number;
   title: string;

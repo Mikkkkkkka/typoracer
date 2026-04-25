@@ -26,6 +26,7 @@ import type { Request, Response } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
+import { CreateDiscussionDto } from './dto/create-discussion.dto';
 import { CreateDiscussionReplyDto } from './dto/create-discussion-reply.dto';
 import { DiscussionDto } from './dto/discussion.dto';
 import { DiscussionReplyEnvelopeDto } from './dto/discussion-reply-envelope.dto';
@@ -62,6 +63,33 @@ export class DiscussionsApiController {
     }
 
     return result.items;
+  }
+
+  @ApiOperation({ summary: 'Create a discussion' })
+  @ApiBearerAuth()
+  @ApiCreatedResponse({ type: DiscussionDto })
+  @ApiBadRequestResponse({ description: 'Invalid discussion payload.' })
+  @ApiNotFoundResponse({ description: 'Author was not found.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
+  @Post()
+  @HttpCode(201)
+  async createDiscussion(
+    @Body() body: CreateDiscussionDto,
+    @Req() request: Request,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const discussion = await this.discussionsService.createDiscussion({
+      author: currentUser.username,
+      title: body.title,
+      excerpt: body.excerpt,
+      body: body.body,
+    });
+
+    if (!discussion) {
+      throw new NotFoundException('Author not found.');
+    }
+
+    return discussion;
   }
 
   @ApiOperation({ summary: 'Get discussion details' })

@@ -5,6 +5,7 @@ import {
 } from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  CreateDiscussion,
   CreateDiscussionReply,
   Discussion,
   DiscussionReply,
@@ -285,6 +286,52 @@ export class DiscussionsService {
       author: nextReply.author.username,
       text: nextReply.text,
     };
+  }
+
+  async createDiscussion(input: CreateDiscussion): Promise<Discussion | undefined> {
+    const author = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: input.author.trim(),
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!author) {
+      return undefined;
+    }
+
+    const discussion = await this.prisma.discussion.create({
+      data: {
+        title: input.title.trim(),
+        excerpt: input.excerpt.trim(),
+        body: input.body.trim(),
+        authorId: author.id,
+      },
+      include: {
+        author: {
+          select: {
+            username: true,
+          },
+        },
+        replies: {
+          orderBy: { id: 'asc' },
+          include: {
+            author: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return this.mapDiscussion(discussion);
   }
 
   private mapDiscussion(discussion: {
