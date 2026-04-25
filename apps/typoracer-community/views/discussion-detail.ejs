@@ -10,8 +10,9 @@
         <form
             class="card discussion-reply-form"
             id="discussion-reply-form"
+            action="/forums/<%= discussion.id %>/replies"
+            method="post"
             data-discussion-id="<%= discussion.id %>"
-            data-current-user="<%= currentUsername %>"
         >
             <h2>Post a reply</h2>
             <p class="discussion-reply-form__signed-in">Replying as <a href="/users/<%= currentUsername %>"><%= currentUsername %></a></p>
@@ -23,8 +24,8 @@
                 maxlength="400"
                 placeholder="Write something useful."
                 required
-            ></textarea>
-            <p class="discussion-reply-form__status" id="discussion-reply-status" role="status" aria-live="polite"></p>
+            ><%= replyDraftText ?? '' %></textarea>
+            <p class="discussion-reply-form__status" id="discussion-reply-status" role="status" aria-live="polite"><%= replyFormError ?? replyFormSuccess ?? '' %></p>
             <button class="discussion-reply-form__submit" type="submit">Post reply</button>
         </form>
         <% } else { %>
