@@ -25,8 +25,8 @@ import { buildPaginationLinkHeader } from '../common/pagination/pagination-links
 import { QuoteRecordsPayloadDto } from '../quotes/dto/quote-records-payload.dto';
 import { QuoteRecordsService } from '../quotes/quote-records.service';
 import { AttemptsService } from './attempts.service';
+import { AttemptDto } from './dto/attempt.dto';
 import { CreateAttemptDto } from './dto/create-attempt.dto';
-import { Attempt } from './entities/attempt.entity';
 
 @ApiTags('quotes')
 @Controller('api/quotes/:quoteId/attempts')
@@ -63,7 +63,7 @@ export class QuoteAttemptsApiController {
   @ApiOperation({ summary: 'List attempts for a quote' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiOkResponse({ type: Attempt, isArray: true })
+  @ApiOkResponse({ type: AttemptDto, isArray: true })
   @ApiNotFoundResponse({ description: 'Quote was not found.' })
   @Get()
   async findAll(
@@ -87,7 +87,7 @@ export class QuoteAttemptsApiController {
   }
 
   @ApiOperation({ summary: 'Get a quote attempt by id' })
-  @ApiOkResponse({ type: Attempt })
+  @ApiOkResponse({ type: AttemptDto })
   @ApiNotFoundResponse({ description: 'Attempt was not found.' })
   @Get(':attemptId')
   findOne(

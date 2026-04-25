@@ -25,9 +25,9 @@ import type { Request, Response } from 'express';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
 import { AttemptsService } from './attempts.service';
+import { AttemptDto } from './dto/attempt.dto';
 import { CreateAttemptDto } from './dto/create-attempt.dto';
 import { UpdateAttemptDto } from './dto/update-attempt.dto';
-import { Attempt } from './entities/attempt.entity';
 
 @ApiTags('attempts')
 @Controller('api/attempts')
@@ -35,7 +35,7 @@ export class AttemptsApiController {
   constructor(private readonly attemptsService: AttemptsService) {}
 
   @ApiOperation({ summary: 'Create a typing attempt' })
-  @ApiCreatedResponse({ type: Attempt })
+  @ApiCreatedResponse({ type: AttemptDto })
   @ApiBadRequestResponse({ description: 'Invalid attempt payload.' })
   @ApiNotFoundResponse({ description: 'Related quote or user was not found.' })
   @Post()
@@ -49,7 +49,7 @@ export class AttemptsApiController {
   @ApiOperation({ summary: 'List all attempts' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiOkResponse({ type: Attempt, isArray: true })
+  @ApiOkResponse({ type: AttemptDto, isArray: true })
   @Get()
   async findAll(
     @Query() pagination: PaginationQueryDto,
@@ -71,7 +71,7 @@ export class AttemptsApiController {
   }
 
   @ApiOperation({ summary: 'Get an attempt by id' })
-  @ApiOkResponse({ type: Attempt })
+  @ApiOkResponse({ type: AttemptDto })
   @ApiNotFoundResponse({ description: 'Attempt was not found.' })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
@@ -79,7 +79,7 @@ export class AttemptsApiController {
   }
 
   @ApiOperation({ summary: 'Update an attempt' })
-  @ApiOkResponse({ type: Attempt })
+  @ApiOkResponse({ type: AttemptDto })
   @ApiBadRequestResponse({ description: 'Invalid update payload.' })
   @ApiNotFoundResponse({
     description: 'Attempt, quote, or user was not found.',
@@ -93,7 +93,7 @@ export class AttemptsApiController {
   }
 
   @ApiOperation({ summary: 'Delete an attempt' })
-  @ApiOkResponse({ type: Attempt })
+  @ApiOkResponse({ type: AttemptDto })
   @ApiNoContentResponse({ description: 'Attempt deleted.' })
   @ApiNotFoundResponse({ description: 'Attempt was not found.' })
   @Delete(':id')

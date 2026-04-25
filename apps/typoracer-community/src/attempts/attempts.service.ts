@@ -6,9 +6,11 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { QuoteRecordsService } from '../quotes/quote-records.service';
 import { QuotesRecordsEventsService } from '../quotes/quotes-records-events.service';
-import { CreateAttemptDto } from './dto/create-attempt.dto';
-import { UpdateAttemptDto } from './dto/update-attempt.dto';
-import { Attempt } from './entities/attempt.entity';
+import {
+  Attempt,
+  CreateAttempt,
+  UpdateAttempt,
+} from './entities/attempt.entity';
 
 @Injectable()
 export class AttemptsService {
@@ -18,19 +20,19 @@ export class AttemptsService {
     private readonly quotesRecordsEvents: QuotesRecordsEventsService,
   ) {}
 
-  async create(createAttemptDto: CreateAttemptDto): Promise<Attempt> {
+  async create(createAttempt: CreateAttempt): Promise<Attempt> {
     await this.ensureRelationsExist(
-      createAttemptDto.quoteId,
-      createAttemptDto.userId,
+      createAttempt.quoteId,
+      createAttempt.userId,
     );
 
     const attempt = await this.prisma.attempt.create({
       data: {
-        quoteId: createAttemptDto.quoteId,
-        userId: createAttemptDto.userId,
-        accuracy: createAttemptDto.accuracy,
-        wpm: createAttemptDto.wpm,
-        maxRawWpm: createAttemptDto.maxRawWpm ?? createAttemptDto.wpm,
+        quoteId: createAttempt.quoteId,
+        userId: createAttempt.userId,
+        accuracy: createAttempt.accuracy,
+        wpm: createAttempt.wpm,
+        maxRawWpm: createAttempt.maxRawWpm ?? createAttempt.wpm,
       },
     });
 
@@ -152,10 +154,7 @@ export class AttemptsService {
     };
   }
 
-  async update(
-    id: number,
-    updateAttemptDto: UpdateAttemptDto,
-  ): Promise<Attempt> {
+  async update(id: number, updateAttempt: UpdateAttempt): Promise<Attempt> {
     const existingAttempt = await this.prisma.attempt.findUnique({
       where: { id },
     });
@@ -164,19 +163,19 @@ export class AttemptsService {
       throw new NotFoundException('Attempt not found.');
     }
 
-    const nextQuoteId = updateAttemptDto.quoteId ?? existingAttempt.quoteId;
-    const nextUserId = updateAttemptDto.userId ?? existingAttempt.userId;
+    const nextQuoteId = updateAttempt.quoteId ?? existingAttempt.quoteId;
+    const nextUserId = updateAttempt.userId ?? existingAttempt.userId;
 
     await this.ensureRelationsExist(nextQuoteId, nextUserId);
 
     const updatedAttempt = await this.prisma.attempt.update({
       where: { id },
       data: {
-        quoteId: updateAttemptDto.quoteId,
-        userId: updateAttemptDto.userId,
-        accuracy: updateAttemptDto.accuracy,
-        wpm: updateAttemptDto.wpm,
-        maxRawWpm: updateAttemptDto.maxRawWpm,
+        quoteId: updateAttempt.quoteId,
+        userId: updateAttempt.userId,
+        accuracy: updateAttempt.accuracy,
+        wpm: updateAttempt.wpm,
+        maxRawWpm: updateAttempt.maxRawWpm,
       },
     });
 

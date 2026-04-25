@@ -9,8 +9,8 @@ import {
 import type { Request, Response } from 'express';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
-import { Attempt } from './entities/attempt.entity';
 import { AttemptsService } from './attempts.service';
+import { AttemptDto } from './dto/attempt.dto';
 
 @ApiTags('users')
 @Controller('api/users/:username/attempts')
@@ -20,7 +20,7 @@ export class UserAttemptsApiController {
   @ApiOperation({ summary: 'List attempts created by a user' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiOkResponse({ type: Attempt, isArray: true })
+  @ApiOkResponse({ type: AttemptDto, isArray: true })
   @ApiNotFoundResponse({ description: 'User was not found.' })
   @Get()
   async findAll(
