@@ -4,7 +4,7 @@ import {
   PaginationParams,
 } from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
-import { QuoteRecordsService } from '../quotes/quote-records.service';
+import { QuotesRecordsService } from '../quotes/quotes-records.service';
 import { QuotesRecordsEventsService } from '../quotes/quotes-records-events.service';
 import {
   Attempt,
@@ -16,7 +16,7 @@ import {
 export class AttemptsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly quoteRecordsService: QuoteRecordsService,
+    private readonly quoteRecordsService: QuotesRecordsService,
     private readonly quotesRecordsEvents: QuotesRecordsEventsService,
   ) {}
 

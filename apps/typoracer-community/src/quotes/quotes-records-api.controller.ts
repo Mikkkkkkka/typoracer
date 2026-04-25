@@ -15,14 +15,14 @@ import {
 } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { QuoteRecordsPayloadDto } from './dto/quote-records-payload.dto';
-import { QuoteRecordsService } from './quote-records.service';
+import { QuotesRecordsService } from './quotes-records.service';
 import { QuotesRecordsEventsService } from './quotes-records-events.service';
 
 @ApiTags('quotes')
 @Controller('api/quotes/:quoteId/records')
-export class QuoteRecordsApiController {
+export class QuotesRecordsApiController {
   constructor(
-    private readonly quoteRecordsService: QuoteRecordsService,
+    private readonly quoteRecordsService: QuotesRecordsService,
     private readonly quotesRecordsEvents: QuotesRecordsEventsService,
   ) {}
 

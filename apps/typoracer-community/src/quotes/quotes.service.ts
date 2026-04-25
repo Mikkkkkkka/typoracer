@@ -5,13 +5,13 @@ import {
 } from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
 import { Quote, QuoteDetail } from './entities/quote.entity';
-import { QuoteRecordsService } from './quote-records.service';
+import { QuotesRecordsService } from './quotes-records.service';
 
 @Injectable()
 export class QuotesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly quoteRecordsService: QuoteRecordsService,
+    private readonly quoteRecordsService: QuotesRecordsService,
   ) {}
 
   async findAll(): Promise<Quote[]>;

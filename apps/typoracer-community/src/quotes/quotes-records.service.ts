@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { QuoteRecordEntry, QuoteRecordsPayload } from './entities/quote.entity';
 
 @Injectable()
-export class QuoteRecordsService {
+export class QuotesRecordsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByQuote(quoteId: number): Promise<QuoteRecordEntry[]> {
