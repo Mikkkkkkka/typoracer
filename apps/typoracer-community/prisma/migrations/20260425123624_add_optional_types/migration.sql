@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "quotes" ALTER COLUMN "image" DROP NOT NULL,
+ALTER COLUMN "source" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "users" ALTER COLUMN "bio" DROP NOT NULL;

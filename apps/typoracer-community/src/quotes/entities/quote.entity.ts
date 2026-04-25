@@ -1,6 +1,6 @@
 export interface Quote {
   id: number;
-  image: string;
+  image: string | null;
   alt: string;
   text: string;
 }

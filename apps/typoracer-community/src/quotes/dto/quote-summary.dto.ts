@@ -5,7 +5,7 @@ export class QuoteSummaryDto {
   id!: number;
 
   @ApiProperty({ example: '/assets/typewriter.jpg' })
-  image!: string;
+  image: string;
 
   @ApiProperty({ example: 'Vintage typewriter on a desk' })
   alt!: string;

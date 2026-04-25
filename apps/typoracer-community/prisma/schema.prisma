@@ -16,7 +16,7 @@ model User {
   username          String            @unique
   password          String
   joinedAt          DateTime          @map("joined_at")
-  bio               String
+  bio               String?
   attempts          Attempt[]
   discussions       Discussion[]
   discussionReplies DiscussionReply[]
@@ -60,10 +60,10 @@ model DiscussionReply {
 model Quote {
   id        Int         @id @default(autoincrement())
   authorId  Int         @map("author_id")
-  image     String
+  image     String?
   alt       String
   text      String
-  source    String
+  source    String?
   status    QuoteStatus
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
