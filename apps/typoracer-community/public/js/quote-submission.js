@@ -26,7 +26,7 @@ function setupEventListeners() {
   quoteSource.addEventListener('input', clearFormError);
 }
 
-function handleFormSubmit(e) {
+async function handleFormSubmit(e) {
   e.preventDefault();
 
   const formData = new FormData(quoteForm);
@@ -39,24 +39,45 @@ function handleFormSubmit(e) {
     return;
   }
 
-  const submissions = getSubmissions();
-  const nowIso = new Date().toISOString();
-  const newId = Date.now().toString();
-  const result = processSubmission(
-    submissions,
-    submissionInput,
-    editingId,
-    nowIso,
-    newId,
-  );
+  if (editingId) {
+    setFormError('Submitted quotes cannot be edited from this page yet.');
+    return;
+  }
 
-  // В реальности где то здесь был бы вызов метода, который кинул бы цитату на сервер
-  saveSubmissions(result.submissions);
-  editingId = result.editingId;
-  updateSubmitButton(Boolean(editingId));
+  clearFormError();
+  updateSubmitButton(false, true);
 
-  loadSubmissions();
-  clearForm();
+  try {
+    const response = await fetch('/api/quotes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(submissionInput),
+      credentials: 'same-origin',
+    });
+
+    const payload = await readJsonSafely(response);
+
+    if (!response.ok) {
+      throw new Error(payload?.message || 'Unable to submit quote.');
+    }
+
+    saveSubmissions([
+      createStoredSubmission(payload, submissionInput),
+      ...getSubmissions(),
+    ]);
+    loadSubmissions();
+    clearForm();
+    setFormError('Quote submitted for moderation.');
+  } catch (error) {
+    setFormError(
+      error instanceof Error ? error.message : 'Unable to submit quote.',
+    );
+  } finally {
+    updateSubmitButton(false, false);
+  }
 }
 
 function getSubmissionInputFromFormData(formData) {
@@ -95,55 +116,23 @@ function clearFormError() {
   quoteFormError.textContent = '';
 }
 
-function processSubmission(
-  submissions,
-  submissionInput,
-  currentEditingId,
-  nowIso,
-  newId,
-) {
-  const source = submissionInput.source || 'Unknown';
-
-  if (currentEditingId) {
-    const updatedSubmissions = submissions.map((submission) => {
-      if (submission.id !== currentEditingId) {
-        return submission;
-      }
-
-      return {
-        ...submission,
-        text: submissionInput.text,
-        source,
-        updatedAt: nowIso,
-      };
-    });
-
-    return {
-      submissions: updatedSubmissions,
-      editingId: null,
-    };
+function updateSubmitButton(isEditing, isSubmitting) {
+  const submitBtn = document.querySelector('#clear-form');
+  if (!(submitBtn instanceof HTMLButtonElement)) {
+    return;
   }
 
-  const newSubmission = {
-    id: newId,
-    text: submissionInput.text,
-    source,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-  };
+  submitBtn.disabled = Boolean(isSubmitting);
 
-  return {
-    submissions: [newSubmission, ...submissions],
-    editingId: null,
-  };
-}
+  if (isSubmitting) {
+    submitBtn.textContent = 'Submitting...';
+    return;
+  }
 
-function updateSubmitButton(isEditing) {
-  const submitBtn = document.querySelector('#clear-form');
   if (isEditing) {
-    submitBtn.innerHTML = 'Update!';
+    submitBtn.textContent = 'Update!';
   } else {
-    submitBtn.innerHTML = 'Submit!';
+    submitBtn.textContent = 'Submit!';
   }
 }
 
@@ -196,7 +185,7 @@ function createSubmissionElement(submission) {
     },
   );
 
-  tr.querySelector('[data-field="id"]').textContent = submission.id;
+  tr.querySelector('[data-field="id"]').textContent = String(submission.id);
   tr.querySelector('[data-field="date"]').innerHTML =
     submission.createdAt !== submission.updatedAt
       ? `<ul>${updatedDate}</ul>`
@@ -271,4 +260,31 @@ function getSubmissions() {
 
 function saveSubmissions(submissions) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions));
+}
+
+function createStoredSubmission(payload, submissionInput) {
+  const nowIso = new Date().toISOString();
+
+  return {
+    id: String(payload?.id ?? Date.now()),
+    text: String(payload?.text ?? submissionInput.text),
+    source: String(payload?.source ?? submissionInput.source || 'Unknown'),
+    status: String(payload?.status ?? 'SUBMITTED'),
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+}
+
+async function readJsonSafely(response) {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!contentType.includes('application/json')) {
+    return null;
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }
