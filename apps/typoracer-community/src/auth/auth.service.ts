@@ -17,6 +17,11 @@ type UserRecord = {
   password: string;
 };
 
+type JwtHeader = {
+  alg: string;
+  typ: string;
+};
+
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
@@ -150,21 +155,17 @@ export class AuthService {
     }
 
     try {
-      const header = JSON.parse(this.base64UrlDecode(encodedHeader).toString());
+      const header = this.parseJwtHeader(
+        this.base64UrlDecode(encodedHeader).toString(),
+      );
       if (header.alg !== 'HS256' || header.typ !== 'JWT') {
         return null;
       }
 
-      const payload = JSON.parse(
+      const payload = this.parseJwtPayload(
         this.base64UrlDecode(encodedPayload).toString(),
-      ) as AuthTokenPayload;
-
-      if (
-        typeof payload.id !== 'number' ||
-        typeof payload.username !== 'string' ||
-        typeof payload.exp !== 'number' ||
-        payload.exp <= Math.floor(Date.now() / 1000)
-      ) {
+      );
+      if (!payload || payload.exp <= Math.floor(Date.now() / 1000)) {
         return null;
       }
 
@@ -230,5 +231,51 @@ export class AuthService {
 
   private base64UrlDecode(value: string) {
     return Buffer.from(value, 'base64url');
+  }
+
+  private parseJwtHeader(value: string): JwtHeader {
+    const parsed: unknown = JSON.parse(value);
+
+    if (!this.isJwtHeader(parsed)) {
+      throw new Error('Invalid JWT header.');
+    }
+
+    return parsed;
+  }
+
+  private parseJwtPayload(value: string): AuthTokenPayload | null {
+    const parsed: unknown = JSON.parse(value);
+
+    if (!this.isAuthTokenPayload(parsed)) {
+      return null;
+    }
+
+    return parsed;
+  }
+
+  private isJwtHeader(value: unknown): value is JwtHeader {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'alg' in value &&
+      typeof value.alg === 'string' &&
+      'typ' in value &&
+      typeof value.typ === 'string'
+    );
+  }
+
+  private isAuthTokenPayload(value: unknown): value is AuthTokenPayload {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'id' in value &&
+      typeof value.id === 'number' &&
+      'username' in value &&
+      typeof value.username === 'string' &&
+      'iat' in value &&
+      typeof value.iat === 'number' &&
+      'exp' in value &&
+      typeof value.exp === 'number'
+    );
   }
 }
