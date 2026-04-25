@@ -59,41 +59,58 @@ async function handleFormSubmit(e) {
     return;
   }
 
-  if (editingId) {
-    setFormError('Submitted quotes cannot be edited from this page yet.');
-    return;
-  }
-
   clearFormError();
-  updateSubmitButton(false, true);
+  updateSubmitButton(Boolean(editingId), true);
 
   try {
-    const response = await fetch('/api/quotes', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
+    const response = await fetch(
+      editingId ? `/api/quotes/${encodeURIComponent(editingId)}` : '/api/quotes',
+      {
+        method: editingId ? 'PATCH' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(submissionInput),
+        credentials: 'same-origin',
       },
-      body: JSON.stringify(submissionInput),
-      credentials: 'same-origin',
-    });
+    );
 
     const payload = await readJsonSafely(response);
 
     if (!response.ok) {
-      throw new Error(payload?.message || 'Unable to submit quote.');
+      throw new Error(
+        payload?.message ||
+          (editingId ? 'Unable to update quote.' : 'Unable to submit quote.'),
+      );
     }
 
-    saveSubmissions([
-      createStoredSubmission(payload, submissionInput),
-      ...getSubmissions(),
-    ]);
+    const submissions = getSubmissions();
+    const nextSubmission = createStoredSubmission(payload, submissionInput);
+    const nextSubmissions = editingId
+      ? submissions.map((submission) =>
+          submission.id === String(editingId)
+            ? {
+                ...submission,
+                ...nextSubmission,
+                createdAt: submission.createdAt,
+                updatedAt: new Date().toISOString(),
+              }
+            : submission,
+        )
+      : [nextSubmission, ...submissions];
+
+    saveSubmissions(nextSubmissions);
     loadSubmissions();
     clearForm();
-    setFormError('Quote submitted for moderation.');
+    setFormError(editingId ? 'Quote updated.' : 'Quote submitted for moderation.');
   } catch (error) {
     setFormError(
-      error instanceof Error ? error.message : 'Unable to submit quote.',
+      error instanceof Error
+        ? error.message
+        : editingId
+          ? 'Unable to update quote.'
+          : 'Unable to submit quote.',
     );
   } finally {
     updateSubmitButton(false, false);
@@ -145,7 +162,7 @@ function updateSubmitButton(isEditing, isSubmitting) {
   submitBtn.disabled = Boolean(isSubmitting);
 
   if (isSubmitting) {
-    submitBtn.textContent = 'Submitting...';
+    submitBtn.textContent = isEditing ? 'Updating...' : 'Submitting...';
     return;
   }
 
@@ -254,7 +271,7 @@ function editSubmission(id) {
   if (!submission) return;
 
   quoteText.value = submission.text;
-  quoteSource.value = submission.source;
+  quoteSource.value = submission.source === 'Unknown' ? '' : submission.source;
 
   editingId = id;
 
@@ -262,7 +279,9 @@ function editSubmission(id) {
 }
 
 function deleteSubmission(id) {
-  if (!confirm('Are you sure you want to delete this quote?')) {
+  if (
+    !confirm('Are you sure you want to remove this item from your local submission list?')
+  ) {
     return;
   }
 
