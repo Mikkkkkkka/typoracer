@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import {
   PaginatedResult,
   PaginationParams,
@@ -128,6 +128,59 @@ export class QuotesService {
     });
 
     return quote;
+  }
+
+  async updateQuote(
+    quoteId: number,
+    authorUsername: string,
+    input: {
+      text?: string;
+      source?: string;
+    },
+  ) {
+    const quote = await this.prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: {
+        id: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
+        status: true,
+      },
+    });
+
+    if (!quote) {
+      return undefined;
+    }
+
+    if (
+      quote.author.username.toLowerCase() !==
+      authorUsername.trim().toLowerCase()
+    ) {
+      throw new ForbiddenException('You can only edit your own quotes.');
+    }
+
+    const source =
+      input.source === undefined ? undefined : input.source.trim() || null;
+    const updatedQuote = await this.prisma.quote.update({
+      where: { id: quoteId },
+      data: {
+        text: input.text === undefined ? undefined : input.text.trim(),
+        source,
+        alt:
+          input.source === undefined ? undefined : source || 'Submitted quote',
+      },
+      select: {
+        id: true,
+        text: true,
+        source: true,
+        status: true,
+      },
+    });
+
+    return updatedQuote;
   }
 
   private formatLongDate(date: Date) {

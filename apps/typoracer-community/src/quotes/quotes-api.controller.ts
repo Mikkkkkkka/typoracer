@@ -1,19 +1,22 @@
 import {
+  Body,
   Controller,
+  ForbiddenException,
   Get,
-  Post,
   NotFoundException,
   Param,
   ParseIntPipe,
+  Patch,
+  Post,
   Query,
   Req,
   Res,
-  Body,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -29,6 +32,7 @@ import { CreateQuoteSubmissionDto } from './dto/create-quote-submission.dto';
 import { QuoteDetailDto } from './dto/quote-detail.dto';
 import { QuoteSubmissionResponseDto } from './dto/quote-submission-response.dto';
 import { QuoteSummaryDto } from './dto/quote-summary.dto';
+import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { QuotesService } from './quotes.service';
 
 @ApiTags('quotes')
@@ -86,6 +90,44 @@ export class QuotesApiController {
     }
 
     return quote;
+  }
+
+  @ApiOperation({ summary: 'Update a submitted quote' })
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: QuoteSubmissionResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid quote payload.' })
+  @ApiForbiddenResponse({
+    description: 'You can only edit your own quotes.',
+  })
+  @ApiNotFoundResponse({ description: 'Quote was not found.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
+  @Patch(':quoteId')
+  async update(
+    @Param('quoteId', ParseIntPipe) quoteId: number,
+    @Body() body: UpdateQuoteDto,
+    @Req() request: Request,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+
+    try {
+      const quote = await this.quotesService.updateQuote(
+        quoteId,
+        currentUser.username,
+        body,
+      );
+
+      if (!quote) {
+        throw new NotFoundException('Quote not found.');
+      }
+
+      return quote;
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+
+      throw error;
+    }
   }
 
   @ApiOperation({ summary: 'Get quote details with records' })
