@@ -11,6 +11,7 @@ import {
 import { ApiExcludeController } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AuthService } from '../auth/auth.service';
+import { CreateDiscussionFormDto } from './dto/create-discussion-form.dto';
 import { DiscussionsService } from './discussions.service';
 
 @ApiExcludeController()
@@ -28,8 +29,52 @@ export class DiscussionsController {
       currentPath: '/forums',
       title: 'Forums',
       currentUser: await this.authService.getCurrentUser(request),
+      discussionCreated: request.query.created === '1',
       discussions: await this.discussionsService.getDiscussions(),
     };
+  }
+
+  @Get('new')
+  async getCreateDiscussionPage(
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    await this.authService.requireCurrentUser(request);
+    return this.renderCreateDiscussionPage(request, response);
+  }
+
+  @Post()
+  async createDiscussion(
+    @Body() body: CreateDiscussionFormDto,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const form = this.normalizeDiscussionForm(body);
+    const validationError = this.validateDiscussionForm(form);
+
+    if (validationError) {
+      return this.renderCreateDiscussionPage(request, response, {
+        error: validationError,
+        form,
+      });
+    }
+
+    const discussion = await this.discussionsService.createDiscussion({
+      author: currentUser.username,
+      title: form.title,
+      excerpt: form.excerpt,
+      body: form.body,
+    });
+
+    if (!discussion) {
+      return this.renderCreateDiscussionPage(request, response, {
+        error: 'Unable to create discussion.',
+        form,
+      });
+    }
+
+    return response.redirect(`/forums/${discussion.id}?created=1`);
   }
 
   @Get(':discussionId')
@@ -118,12 +163,78 @@ export class DiscussionsController {
       title: discussion.title,
       currentUser,
       currentUsername: currentUser?.username ?? null,
+      discussionCreated: request.query.created === '1',
       replyFormError: options?.error ?? this.getQueryMessage(request, 'error'),
       replyFormSuccess:
         request.query.replyPosted === '1' ? 'Reply posted.' : null,
       replyDraftText: options?.draftReplyText ?? '',
       discussion,
     });
+  }
+
+  private async renderCreateDiscussionPage(
+    request: Request,
+    response: Response,
+    options?: {
+      error?: string;
+      form?: {
+        title: string;
+        excerpt: string;
+        body: string;
+      };
+    },
+  ) {
+    return response.render('create-discussion', {
+      currentPath: '/forums',
+      title: 'Start Discussion',
+      currentUser: await this.authService.getCurrentUser(request),
+      discussionFormError: options?.error ?? this.getQueryMessage(request, 'error'),
+      formValues: options?.form ?? {
+        title: '',
+        excerpt: '',
+        body: '',
+      },
+    });
+  }
+
+  private normalizeDiscussionForm(body: CreateDiscussionFormDto) {
+    return {
+      title: body.title?.trim() ?? '',
+      excerpt: body.excerpt?.trim() ?? '',
+      body: body.body?.trim() ?? '',
+    };
+  }
+
+  private validateDiscussionForm(form: {
+    title: string;
+    excerpt: string;
+    body: string;
+  }) {
+    if (!form.title) {
+      return 'Title is required.';
+    }
+
+    if (form.title.length > 120) {
+      return 'Title must be 120 characters or fewer.';
+    }
+
+    if (!form.excerpt) {
+      return 'Excerpt is required.';
+    }
+
+    if (form.excerpt.length > 240) {
+      return 'Excerpt must be 240 characters or fewer.';
+    }
+
+    if (!form.body) {
+      return 'Discussion body is required.';
+    }
+
+    if (form.body.length > 5000) {
+      return 'Discussion body must be 5000 characters or fewer.';
+    }
+
+    return null;
   }
 
   private getQueryMessage(request: Request, key: string) {

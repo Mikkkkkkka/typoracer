@@ -4,6 +4,9 @@
         <article class="card discussion-card">
             <p class="discussion-card__meta">Started by <a href="/users/<%= discussion.author %>"><%= discussion.author %></a></p>
             <h1><%= discussion.title %></h1>
+            <% if (discussionCreated) { %>
+            <p class="generic-form__success">Discussion created.</p>
+            <% } %>
             <p><%= discussion.body %></p>
         </article>
         <% if (currentUsername) { %>
