@@ -183,6 +183,37 @@ export class QuotesService {
     return updatedQuote;
   }
 
+  async deleteQuote(quoteId: number, authorUsername: string) {
+    const quote = await this.prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: {
+        id: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (!quote) {
+      return false;
+    }
+
+    if (
+      quote.author.username.toLowerCase() !==
+      authorUsername.trim().toLowerCase()
+    ) {
+      throw new ForbiddenException('You can only delete your own quotes.');
+    }
+
+    await this.prisma.quote.delete({
+      where: { id: quoteId },
+    });
+
+    return true;
+  }
+
   private formatLongDate(date: Date) {
     return new Intl.DateTimeFormat('ru-RU', {
       day: 'numeric',
