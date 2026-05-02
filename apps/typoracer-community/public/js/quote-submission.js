@@ -12,22 +12,43 @@ const submissionRowTemplate = document.getElementById(
   'quote-submission-row-template',
 );
 const quoteFormError = document.getElementById('quote-form-error');
+const submitButton = document.getElementById('clear-form');
 
 let editingId = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeQuoteSubmissionPage);
+} else {
+  initializeQuoteSubmissionPage();
+}
+
+function initializeQuoteSubmissionPage() {
+  if (
+    !(quoteForm instanceof HTMLFormElement) ||
+    !(quoteText instanceof HTMLTextAreaElement) ||
+    !(quoteSource instanceof HTMLInputElement) ||
+    !(quoteFormError instanceof HTMLElement) ||
+    !(submitButton instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
   loadSubmissions();
   setupEventListeners();
-});
+  void syncStoredSubmissions();
+}
 
 function setupEventListeners() {
   quoteForm.addEventListener('submit', handleFormSubmit);
+  submitButton.addEventListener('click', handleFormSubmit);
   quoteText.addEventListener('input', clearFormError);
   quoteSource.addEventListener('input', clearFormError);
 }
 
-function handleFormSubmit(e) {
-  e.preventDefault();
+async function handleFormSubmit(e) {
+  if (e?.preventDefault) {
+    e.preventDefault();
+  }
 
   const formData = new FormData(quoteForm);
   const submissionInput = getSubmissionInputFromFormData(formData);
@@ -39,24 +60,62 @@ function handleFormSubmit(e) {
     return;
   }
 
-  const submissions = getSubmissions();
-  const nowIso = new Date().toISOString();
-  const newId = Date.now().toString();
-  const result = processSubmission(
-    submissions,
-    submissionInput,
-    editingId,
-    nowIso,
-    newId,
-  );
+  clearFormError();
+  updateSubmitButton(Boolean(editingId), true);
 
-  // В реальности где то здесь был бы вызов метода, который кинул бы цитату на сервер
-  saveSubmissions(result.submissions);
-  editingId = result.editingId;
-  updateSubmitButton(Boolean(editingId));
+  try {
+    const response = await fetch(
+      editingId ? `/api/quotes/${encodeURIComponent(editingId)}` : '/api/quotes',
+      {
+        method: editingId ? 'PATCH' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(submissionInput),
+        credentials: 'same-origin',
+      },
+    );
 
-  loadSubmissions();
-  clearForm();
+    const payload = await readJsonSafely(response);
+
+    if (!response.ok) {
+      throw new Error(
+        payload?.message ||
+          (editingId ? 'Unable to update quote.' : 'Unable to submit quote.'),
+      );
+    }
+
+    const submissions = getSubmissions();
+    const nextSubmission = createStoredSubmission(payload, submissionInput);
+    const nextSubmissions = editingId
+      ? submissions.map((submission) =>
+          submission.id === String(editingId)
+            ? {
+                ...submission,
+                ...nextSubmission,
+                createdAt: submission.createdAt,
+                updatedAt: new Date().toISOString(),
+              }
+            : submission,
+        )
+      : [nextSubmission, ...submissions];
+
+    saveSubmissions(nextSubmissions);
+    loadSubmissions();
+    clearForm();
+    setFormError(editingId ? 'Quote updated.' : 'Quote submitted for moderation.');
+  } catch (error) {
+    setFormError(
+      error instanceof Error
+        ? error.message
+        : editingId
+          ? 'Unable to update quote.'
+          : 'Unable to submit quote.',
+    );
+  } finally {
+    updateSubmitButton(false, false);
+  }
 }
 
 function getSubmissionInputFromFormData(formData) {
@@ -95,55 +154,23 @@ function clearFormError() {
   quoteFormError.textContent = '';
 }
 
-function processSubmission(
-  submissions,
-  submissionInput,
-  currentEditingId,
-  nowIso,
-  newId,
-) {
-  const source = submissionInput.source || 'Unknown';
-
-  if (currentEditingId) {
-    const updatedSubmissions = submissions.map((submission) => {
-      if (submission.id !== currentEditingId) {
-        return submission;
-      }
-
-      return {
-        ...submission,
-        text: submissionInput.text,
-        source,
-        updatedAt: nowIso,
-      };
-    });
-
-    return {
-      submissions: updatedSubmissions,
-      editingId: null,
-    };
+function updateSubmitButton(isEditing, isSubmitting) {
+  const submitBtn = document.querySelector('#clear-form');
+  if (!(submitBtn instanceof HTMLButtonElement)) {
+    return;
   }
 
-  const newSubmission = {
-    id: newId,
-    text: submissionInput.text,
-    source,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-  };
+  submitBtn.disabled = Boolean(isSubmitting);
 
-  return {
-    submissions: [newSubmission, ...submissions],
-    editingId: null,
-  };
-}
+  if (isSubmitting) {
+    submitBtn.textContent = isEditing ? 'Updating...' : 'Submitting...';
+    return;
+  }
 
-function updateSubmitButton(isEditing) {
-  const submitBtn = document.querySelector('#clear-form');
   if (isEditing) {
-    submitBtn.innerHTML = 'Update!';
+    submitBtn.textContent = 'Update!';
   } else {
-    submitBtn.innerHTML = 'Submit!';
+    submitBtn.textContent = 'Submit!';
   }
 }
 
@@ -175,6 +202,10 @@ function loadSubmissions() {
 }
 
 function createSubmissionElement(submission) {
+  if (!(submissionRowTemplate instanceof HTMLTemplateElement)) {
+    return document.createElement('tr');
+  }
+
   const tr = submissionRowTemplate.content.firstElementChild.cloneNode(true);
   tr.dataset.id = submission.id;
 
@@ -196,7 +227,7 @@ function createSubmissionElement(submission) {
     },
   );
 
-  tr.querySelector('[data-field="id"]').textContent = submission.id;
+  tr.querySelector('[data-field="id"]').textContent = String(submission.id);
   tr.querySelector('[data-field="date"]').innerHTML =
     submission.createdAt !== submission.updatedAt
       ? `<ul>${updatedDate}</ul>`
@@ -241,26 +272,52 @@ function editSubmission(id) {
   if (!submission) return;
 
   quoteText.value = submission.text;
-  quoteSource.value = submission.source;
+  quoteSource.value = submission.source === 'Unknown' ? '' : submission.source;
 
   editingId = id;
 
   updateSubmitButton(true);
 }
 
-function deleteSubmission(id) {
-  if (!confirm('Are you sure you want to delete this quote?')) {
+async function deleteSubmission(id) {
+  if (
+    !confirm('Are you sure you want to delete this quote?')
+  ) {
     return;
   }
 
-  const submissions = getSubmissions();
-  const filteredSubmissions = submissions.filter((sub) => sub.id !== id);
+  clearFormError();
 
-  saveSubmissions(filteredSubmissions);
-  loadSubmissions();
+  try {
+    const response = await fetch(`/api/quotes/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+      },
+      credentials: 'same-origin',
+    });
 
-  if (editingId === id) {
-    clearForm();
+    const payload = await readJsonSafely(response);
+
+    if (!response.ok) {
+      throw new Error(payload?.message || 'Unable to delete quote.');
+    }
+
+    const submissions = getSubmissions();
+    const filteredSubmissions = submissions.filter((sub) => sub.id !== id);
+
+    saveSubmissions(filteredSubmissions);
+    loadSubmissions();
+
+    if (editingId === id) {
+      clearForm();
+    }
+
+    setFormError('Quote deleted.');
+  } catch (error) {
+    setFormError(
+      error instanceof Error ? error.message : 'Unable to delete quote.',
+    );
   }
 }
 
@@ -271,4 +328,143 @@ function getSubmissions() {
 
 function saveSubmissions(submissions) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions));
+}
+
+async function syncStoredSubmissions() {
+  try {
+    const submissions = getSubmissions();
+
+    if (!Array.isArray(submissions) || submissions.length === 0) {
+      return;
+    }
+
+    let nextSubmissions = submissions.slice();
+    let hasChanges = false;
+
+    for (const submission of submissions) {
+      const syncedSubmission = await syncSubmission(submission);
+
+      if (!syncedSubmission) {
+        continue;
+      }
+
+      const currentIndex = nextSubmissions.findIndex(
+        (storedSubmission) => storedSubmission.id === submission.id,
+      );
+
+      if (currentIndex === -1) {
+        continue;
+      }
+
+      if (
+        JSON.stringify(nextSubmissions[currentIndex]) !==
+        JSON.stringify(syncedSubmission)
+      ) {
+        nextSubmissions[currentIndex] = syncedSubmission;
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      saveSubmissions(nextSubmissions);
+      loadSubmissions();
+    }
+  } catch {
+    return;
+  }
+}
+
+async function syncSubmission(submission) {
+  if (!submission || typeof submission !== 'object') {
+    return null;
+  }
+
+  const submissionInput = {
+    text: String(submission.text || '').trim(),
+    source:
+      submission.source === 'Unknown' ? '' : String(submission.source || '').trim(),
+  };
+
+  if (validateSubmissionInput(submissionInput)) {
+    return null;
+  }
+
+  const updateResponse = await sendQuoteRequest(
+    `/api/quotes/${encodeURIComponent(String(submission.id || ''))}`,
+    'PATCH',
+    submissionInput,
+  );
+
+  if (updateResponse.ok) {
+    const payload = await readJsonSafely(updateResponse);
+
+    return {
+      ...submission,
+      ...createStoredSubmission(payload, submissionInput),
+      createdAt: submission.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  if (updateResponse.status !== 404) {
+    return null;
+  }
+
+  const createResponse = await sendQuoteRequest(
+    '/api/quotes',
+    'POST',
+    submissionInput,
+  );
+
+  if (!createResponse.ok) {
+    return null;
+  }
+
+  const payload = await readJsonSafely(createResponse);
+
+  return {
+    ...submission,
+    ...createStoredSubmission(payload, submissionInput),
+    createdAt: submission.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function createStoredSubmission(payload, submissionInput) {
+  const nowIso = new Date().toISOString();
+
+  return {
+    id: String(payload?.id ?? Date.now()),
+    text: String(payload?.text ?? submissionInput.text),
+    source: String((payload?.source ?? submissionInput.source) || 'Unknown'),
+    status: String(payload?.status ?? 'SUBMITTED'),
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+}
+
+function sendQuoteRequest(url, method, submissionInput) {
+  return fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(submissionInput),
+    credentials: 'same-origin',
+  });
+}
+
+async function readJsonSafely(response) {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!contentType.includes('application/json')) {
+    return null;
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }

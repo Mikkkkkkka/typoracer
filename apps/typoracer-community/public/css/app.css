@@ -116,9 +116,36 @@ h3 {
     color: #9ca3af;
 }
 
+.user-info form {
+    margin: 0;
+}
+
 .user-info__image {
     width: 28px;
     height: 28px;
+}
+
+.user-info__button {
+    padding: 6px 10px;
+    border: 1px solid #3a3a3a;
+    background: #1f1f1f;
+    color: #f3f4f6;
+    cursor: pointer;
+}
+
+.user-info__button:hover {
+    background: #2a2a2a;
+    color: #fff;
+    text-decoration: none;
+}
+
+.user-info__username-link {
+    color: inherit;
+}
+
+.user-info__username-link:hover {
+    color: #f3f4f6;
+    text-decoration: none;
 }
 
 .page-section {
@@ -222,6 +249,7 @@ h3 {
 .discussion-reply-form__textarea,
 .generic-form__textarea,
 .generic-form__text-input,
+select,
 input[type='text'],
 textarea {
     width: 100%;
@@ -259,6 +287,21 @@ textarea {
 .main-footer__load-metrics,
 .user-info__username {
     color: #9ca3af;
+}
+
+.generic-form__success {
+    color: #86efac;
+}
+
+.generic-form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.generic-form__secondary-link {
+    color: #d1d5db;
 }
 
 .generic-form__submit-button,
@@ -311,6 +354,37 @@ textarea {
     color: #d1d5db;
 }
 
+.pagination-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.pagination-nav__link {
+    padding: 8px 12px;
+    border: 1px solid #3a3a3a;
+    background: #1f1f1f;
+    color: #f3f4f6;
+}
+
+.pagination-nav__link:hover {
+    background: #2a2a2a;
+    color: #fff;
+    text-decoration: none;
+}
+
+.pagination-nav__link--disabled {
+    background: #171717;
+    color: #6b7280;
+    cursor: default;
+}
+
+.pagination-nav__status {
+    color: #9ca3af;
+}
+
 .quote-records__status {
     margin: 0 0 16px;
     color: #9ca3af;
@@ -336,6 +410,11 @@ textarea {
 .forum-thread__excerpt {
     margin: 0;
     color: #d1d5db;
+}
+
+.attempts-table__quote-text {
+    margin-top: 6px;
+    color: #9ca3af;
 }
 
 .main-footer {

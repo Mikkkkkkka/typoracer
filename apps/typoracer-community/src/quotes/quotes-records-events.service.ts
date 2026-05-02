@@ -1,9 +1,9 @@
 import { Injectable, MessageEvent } from '@nestjs/common';
 import { Observable, Subject, interval, map, merge, of } from 'rxjs';
-import { QuoteRecordsPayload } from './quotes.models';
+import { QuoteRecordsPayload } from './entities/quote.entity';
 
 @Injectable()
-export class QuoteRecordsEventsService {
+export class QuotesRecordsEventsService {
   private readonly streams = new Map<number, Subject<QuoteRecordsPayload>>();
 
   createStream(

@@ -4,7 +4,13 @@
             <article class="card discussion-card">
                 <p class="discussion-card__meta">Joined <%= user.joinedAt %></p>
                 <h1><%= user.username %></h1>
-                <p><%= user.bio %></p>
+                <p><%= user.bio ?? 'No bio yet.' %></p>
+                <% if (isOwnProfile) { %>
+                    <p><a href="/users/<%= encodeURIComponent(user.username) %>/edit">Edit profile</a></p>
+                    <form action="/users/<%= encodeURIComponent(user.username) %>/delete" method="post">
+                        <button class="user-info__button" type="submit">Delete account</button>
+                    </form>
+                <% } %>
             </article>
             <article class="card discussion-reply">
                 <p class="discussion-reply__author">Typing stats</p>

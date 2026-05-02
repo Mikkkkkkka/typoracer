@@ -1,33 +1,24 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Attempt } from '../attempts/entities/attempt.entity';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import {
   PaginatedResult,
   PaginationParams,
 } from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
-import { QuoteRecordsEventsService } from './quote-records-events.service';
-import {
-  CreateAttemptInput,
-  QuoteDetail,
-  QuoteRecordEntry,
-  QuoteRecordsPayload,
-  QuoteSummary,
-} from './quotes.models';
+import { Quote, QuoteDetail } from './entities/quote.entity';
+import { QuotesRecordsService } from './quotes-records.service';
 
 @Injectable()
 export class QuotesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly quoteRecordsEvents: QuoteRecordsEventsService,
+    private readonly quoteRecordsService: QuotesRecordsService,
   ) {}
 
-  async getQuotes(): Promise<QuoteSummary[]>;
-  async getQuotes(
-    pagination: PaginationParams,
-  ): Promise<PaginatedResult<QuoteSummary>>;
-  async getQuotes(
+  async findAll(): Promise<Quote[]>;
+  async findAll(pagination: PaginationParams): Promise<PaginatedResult<Quote>>;
+  async findAll(
     pagination?: PaginationParams,
-  ): Promise<PaginatedResult<QuoteSummary> | QuoteSummary[]> {
+  ): Promise<PaginatedResult<Quote> | Quote[]> {
     if (!pagination) {
       return this.prisma.quote.findMany({
         where: { status: 'APPROVED' },
@@ -60,7 +51,7 @@ export class QuotesService {
     };
   }
 
-  async getQuoteById(quoteId: number): Promise<QuoteDetail | undefined> {
+  async findOne(quoteId: number): Promise<QuoteDetail | undefined> {
     const quote = await this.prisma.quote.findFirst({
       where: {
         id: quoteId,
@@ -93,250 +84,141 @@ export class QuotesService {
       author: {
         username: quote.author.username,
       },
-      records: await this.getQuoteRecords(quote.id),
+      records: await this.quoteRecordsService.findByQuote(quote.id),
     };
   }
 
-  async getQuoteReferenceById(
-    quoteId: number,
-  ): Promise<QuoteDetail | undefined> {
-    const quote = await this.prisma.quote.findUnique({
-      where: { id: quoteId },
-      select: {
-        id: true,
-        image: true,
-        alt: true,
-        text: true,
-        createdAt: true,
-        author: {
-          select: {
-            username: true,
-          },
-        },
-      },
-    });
-
-    if (!quote) {
-      return undefined;
-    }
-
-    return {
-      id: quote.id,
-      image: quote.image,
-      alt: quote.alt,
-      text: quote.text,
-      createdAt: this.formatLongDate(quote.createdAt),
-      author: {
-        username: quote.author.username,
-      },
-      records: await this.getQuoteRecords(quote.id),
-    };
-  }
-
-  async getQuoteRecords(quoteId: number): Promise<QuoteRecordEntry[]> {
-    const attempts = await this.prisma.attempt.findMany({
+  async submitQuote(input: {
+    authorUsername: string;
+    text: string;
+    source?: string;
+  }) {
+    const author = await this.prisma.user.findFirst({
       where: {
-        quoteId,
-        quote: {
-          status: 'APPROVED',
+        username: {
+          equals: input.authorUsername.trim(),
+          mode: 'insensitive',
         },
-      },
-      select: {
-        wpm: true,
-        accuracy: true,
-        user: {
-          select: {
-            username: true,
-          },
-        },
-      },
-      orderBy: [{ wpm: 'desc' }, { accuracy: 'desc' }, { createdAt: 'asc' }],
-    });
-
-    return this.buildQuoteRecords(attempts);
-  }
-
-  async getQuoteRecordsPayload(
-    quoteId: number,
-  ): Promise<QuoteRecordsPayload | undefined> {
-    const quote = await this.prisma.quote.findFirst({
-      where: {
-        id: quoteId,
-        status: 'APPROVED',
       },
       select: {
         id: true,
       },
     });
 
-    if (!quote) {
+    if (!author) {
       return undefined;
     }
 
-    return {
-      quoteId: quote.id,
-      records: await this.getQuoteRecords(quote.id),
-      updatedAt: new Date().toISOString(),
-    };
-  }
-
-  async getAttemptsByQuote(
-    quoteId: number,
-    pagination: PaginationParams,
-  ): Promise<PaginatedResult<Attempt>> {
-    const quote = await this.prisma.quote.findUnique({
-      where: { id: quoteId },
-      select: { id: true },
-    });
-
-    if (!quote) {
-      throw new NotFoundException('Quote not found.');
-    }
-
-    const attempts = await this.prisma.attempt.findMany({
-      where: { quoteId },
-      orderBy: { id: 'asc' },
-      skip: (pagination.page - 1) * pagination.limit,
-      take: pagination.limit + 1,
-    });
-
-    const mappedAttempts = attempts.map((attempt) => this.mapAttempt(attempt));
-
-    return {
-      items: mappedAttempts.slice(0, pagination.limit),
-      hasNextPage: mappedAttempts.length > pagination.limit,
-    };
-  }
-
-  async getAttemptByQuote(
-    quoteId: number,
-    attemptId: number,
-  ): Promise<Attempt> {
-    const attempt = await this.prisma.attempt.findFirst({
-      where: {
-        id: attemptId,
-        quoteId,
-      },
-    });
-
-    if (!attempt) {
-      throw new NotFoundException('Attempt not found.');
-    }
-
-    return this.mapAttempt(attempt);
-  }
-
-  async createAttempt(input: CreateAttemptInput): Promise<QuoteRecordsPayload> {
-    const [quote, user] = await Promise.all([
-      this.prisma.quote.findFirst({
-        where: {
-          id: input.quoteId,
-          status: 'APPROVED',
-        },
-        select: {
-          id: true,
-        },
-      }),
-      this.prisma.user.findUnique({
-        where: {
-          id: input.userId,
-        },
-        select: {
-          id: true,
-        },
-      }),
-    ]);
-
-    if (!quote) {
-      throw new NotFoundException('Quote not found.');
-    }
-
-    if (!user) {
-      throw new NotFoundException('User not found.');
-    }
-
-    await this.prisma.attempt.create({
+    const source = input.source?.trim() || null;
+    const quote = await this.prisma.quote.create({
       data: {
-        quoteId: input.quoteId,
-        userId: input.userId,
-        accuracy: input.accuracy,
-        wpm: input.wpm,
-        maxRawWpm: input.maxRawWpm,
+        authorId: author.id,
+        image: null,
+        alt: source || 'Submitted quote',
+        text: input.text.trim(),
+        source,
+        status: 'SUBMITTED',
+      },
+      select: {
+        id: true,
+        text: true,
+        source: true,
+        status: true,
       },
     });
 
-    const payload: QuoteRecordsPayload = {
-      quoteId: input.quoteId,
-      records: await this.getQuoteRecords(input.quoteId),
-      updatedAt: new Date().toISOString(),
-    };
-
-    this.quoteRecordsEvents.publish(input.quoteId, payload);
-
-    return payload;
+    return quote;
   }
 
-  private buildQuoteRecords(
-    attempts: Array<{
-      wpm: number;
-      accuracy: number;
-      user: { username: string };
-    }>,
+  async updateQuote(
+    quoteId: number,
+    authorUsername: string,
+    input: {
+      text?: string;
+      source?: string;
+    },
   ) {
-    const bestAttemptByUser = new Map<string, QuoteRecordEntry>();
+    const quote = await this.prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: {
+        id: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
+        status: true,
+      },
+    });
 
-    for (const attempt of attempts) {
-      const username = attempt.user.username;
-      const currentBest = bestAttemptByUser.get(username);
-
-      if (
-        !currentBest ||
-        attempt.wpm > currentBest.wpm ||
-        (attempt.wpm === currentBest.wpm &&
-          attempt.accuracy > currentBest.accuracy)
-      ) {
-        bestAttemptByUser.set(username, {
-          username,
-          wpm: Math.round(attempt.wpm),
-          accuracy: Math.round(attempt.accuracy),
-        });
-      }
+    if (!quote) {
+      return undefined;
     }
 
-    return Array.from(bestAttemptByUser.values()).sort((left, right) => {
-      if (right.wpm !== left.wpm) {
-        return right.wpm - left.wpm;
-      }
+    if (
+      quote.author.username.toLowerCase() !==
+      authorUsername.trim().toLowerCase()
+    ) {
+      throw new ForbiddenException('You can only edit your own quotes.');
+    }
 
-      return right.accuracy - left.accuracy;
+    const source =
+      input.source === undefined ? undefined : input.source.trim() || null;
+    const updatedQuote = await this.prisma.quote.update({
+      where: { id: quoteId },
+      data: {
+        text: input.text === undefined ? undefined : input.text.trim(),
+        source,
+        alt:
+          input.source === undefined ? undefined : source || 'Submitted quote',
+      },
+      select: {
+        id: true,
+        text: true,
+        source: true,
+        status: true,
+      },
     });
+
+    return updatedQuote;
+  }
+
+  async deleteQuote(quoteId: number, authorUsername: string) {
+    const quote = await this.prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: {
+        id: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (!quote) {
+      return false;
+    }
+
+    if (
+      quote.author.username.toLowerCase() !==
+      authorUsername.trim().toLowerCase()
+    ) {
+      throw new ForbiddenException('You can only delete your own quotes.');
+    }
+
+    await this.prisma.quote.delete({
+      where: { id: quoteId },
+    });
+
+    return true;
   }
 
   private formatLongDate(date: Date) {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'long',
+    return new Intl.DateTimeFormat('ru-RU', {
       day: 'numeric',
+      month: 'long',
       year: 'numeric',
     }).format(date);
-  }
-
-  private mapAttempt(attempt: {
-    id: number;
-    quoteId: number;
-    userId: number;
-    accuracy: number;
-    wpm: number;
-    maxRawWpm: number;
-    createdAt: Date;
-  }): Attempt {
-    return {
-      id: attempt.id,
-      quoteId: attempt.quoteId,
-      userId: attempt.userId,
-      accuracy: attempt.accuracy,
-      wpm: attempt.wpm,
-      maxRawWpm: attempt.maxRawWpm,
-      createdAt: attempt.createdAt.toISOString(),
-    };
   }
 }

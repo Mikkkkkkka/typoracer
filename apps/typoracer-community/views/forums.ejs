@@ -3,6 +3,15 @@
         <div class="section-intro">
             <h1>Forums</h1>
             <p>Open a discussion to read the full text and replies.</p>
+            <% if (currentUser) { %>
+                <p><a href="/forums/new">Start a discussion</a></p>
+            <% } %>
+            <% if (discussionCreated) { %>
+                <p class="generic-form__success">Discussion created.</p>
+            <% } %>
+            <% if (discussionDeleted) { %>
+                <p class="generic-form__success">Discussion deleted.</p>
+            <% } %>
         </div>
         <div class="forums-list">
             <% discussions.forEach((discussion) => { %>

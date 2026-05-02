@@ -1,4 +1,5 @@
 export interface DiscussionReply {
+  id: number;
   author: string;
   text: string;
 }
@@ -6,6 +7,13 @@ export interface DiscussionReply {
 export interface CreateDiscussionReply {
   author: string;
   text: string;
+}
+
+export interface CreateDiscussion {
+  author: string;
+  title: string;
+  excerpt: string;
+  body: string;
 }
 
 export interface Discussion {

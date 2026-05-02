@@ -1,0 +1,49 @@
+<main class="page-content">
+    <section class="page-section">
+        <div class="section-intro">
+            <h1>Attempts</h1>
+            <p class="text-section__paragraph">Your typing results submitted through the HTML workflow.</p>
+            <p><a href="/attempts/new">Add an attempt</a></p>
+            <% if (attemptCreated) { %>
+                <p class="generic-form__success">Attempt added.</p>
+            <% } %>
+            <% if (attemptDeleted) { %>
+                <p class="generic-form__success">Attempt deleted.</p>
+            <% } %>
+        </div>
+
+        <% if (attempts.length === 0) { %>
+            <p>No attempts yet.</p>
+        <% } else { %>
+            <table class="leaderboard" aria-label="Your attempts">
+                <thead class="leaderboard__head">
+                <tr>
+                    <th class="leaderboard__header">#</th>
+                    <th class="leaderboard__header">Quote</th>
+                    <th class="leaderboard__header">WPM</th>
+                    <th class="leaderboard__header">Accuracy</th>
+                    <th class="leaderboard__header">Max raw WPM</th>
+                    <th class="leaderboard__header">Added</th>
+                </tr>
+                </thead>
+                <tbody class="leaderboard__body">
+                <% attempts.forEach((attempt) => { %>
+                    <tr class="leaderboard__row">
+                        <td class="leaderboard__cell">
+                            <a href="/attempts/<%= attempt.id %>"><%= attempt.id %></a>
+                        </td>
+                        <td class="leaderboard__cell">
+                            <a href="/quotes/<%= attempt.quoteId %>">#<%= attempt.quoteId %></a>
+                            <div class="attempts-table__quote-text"><%= attempt.quoteText %></div>
+                        </td>
+                        <td class="leaderboard__cell"><%= attempt.wpm %></td>
+                        <td class="leaderboard__cell"><%= attempt.accuracy %>%</td>
+                        <td class="leaderboard__cell"><%= attempt.maxRawWpm %></td>
+                        <td class="leaderboard__cell"><%= attempt.createdAt %></td>
+                    </tr>
+                <% }) %>
+                </tbody>
+            </table>
+        <% } %>
+    </section>
+</main>

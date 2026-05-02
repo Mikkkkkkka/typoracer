@@ -2,7 +2,11 @@
   "name": "typoracer-community",
   "version": "0.0.1",
   "description": "",
-  "author": "",
+  "author": {
+    "name": "Mikhail Kashin",
+    "email": "kashimikhail@gmail.com",
+    "url": "https://mikkkkkkka.ru"
+  },
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

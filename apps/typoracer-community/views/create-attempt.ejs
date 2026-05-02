@@ -1,0 +1,73 @@
+<main class="page-content">
+    <section class="page-section page-section--narrow">
+        <div class="section-intro">
+            <p class="discussion-card__meta">Attempts</p>
+            <h1>Add an attempt</h1>
+            <p class="text-section__paragraph">
+                This form lets you add a typing result directly for the laboratory workflow.
+            </p>
+            <p class="generic-form__error">
+                Temporary workflow: direct HTML submission of attempts is enabled only for the current beta stage and will be removed later.
+            </p>
+        </div>
+
+        <form class="generic-form" action="/attempts" method="post" novalidate>
+            <div class="generic-form__container">
+                <label class="generic-form__label" for="quoteId">Quote</label>
+                <select id="quoteId" class="generic-form__text-input" name="quoteId" required>
+                    <option value="">Select a quote</option>
+                    <% quotes.forEach((quote) => { %>
+                        <option value="<%= quote.id %>" <%= formValues.quoteId === String(quote.id) ? 'selected' : '' %>>
+                            #<%= quote.id %> - <%= quote.text.length > 80 ? `${quote.text.slice(0, 80)}...` : quote.text %>
+                        </option>
+                    <% }) %>
+                </select>
+
+                <label class="generic-form__label" for="wpm">WPM</label>
+                <input
+                    id="wpm"
+                    class="generic-form__text-input"
+                    type="number"
+                    name="wpm"
+                    min="1"
+                    step="0.1"
+                    required
+                    value="<%= formValues.wpm %>"
+                />
+
+                <label class="generic-form__label" for="accuracy">Accuracy</label>
+                <input
+                    id="accuracy"
+                    class="generic-form__text-input"
+                    type="number"
+                    name="accuracy"
+                    min="0.1"
+                    max="100"
+                    step="0.1"
+                    required
+                    value="<%= formValues.accuracy %>"
+                />
+
+                <label class="generic-form__label" for="maxRawWpm">Max raw WPM</label>
+                <input
+                    id="maxRawWpm"
+                    class="generic-form__text-input"
+                    type="number"
+                    name="maxRawWpm"
+                    min="1"
+                    step="0.1"
+                    value="<%= formValues.maxRawWpm %>"
+                />
+
+                <% if (attemptFormError) { %>
+                    <p class="generic-form__error" role="alert"><%= attemptFormError %></p>
+                <% } %>
+
+                <div class="generic-form__actions">
+                    <button class="generic-form__submit-button" type="submit">Save attempt</button>
+                    <a class="generic-form__secondary-link" href="/attempts">Back to attempts</a>
+                </div>
+            </div>
+        </form>
+    </section>
+</main>

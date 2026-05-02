@@ -1,28 +1,35 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AuthService } from '../auth/auth.service';
 import {
   PaginatedResult,
   PaginationParams,
 } from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
-import { UserProfile } from './users.models';
+import { User, UserProfile } from './entities/user.entity';
+import { UpdateUserDto } from './dto/update-user.dto';
 
-export interface UserSummary {
+interface UserLeaderboardEntry {
   username: string;
-  joinedAt: string;
-  bio: string;
+  wpm: number;
+  accuracy: number;
 }
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authService: AuthService,
+  ) {}
 
-  async getUsers(): Promise<UserSummary[]>;
-  async getUsers(
-    pagination: PaginationParams,
-  ): Promise<PaginatedResult<UserSummary>>;
-  async getUsers(
+  async findAll(): Promise<User[]>;
+  async findAll(pagination: PaginationParams): Promise<PaginatedResult<User>>;
+  async findAll(
     pagination?: PaginationParams,
-  ): Promise<PaginatedResult<UserSummary> | UserSummary[]> {
+  ): Promise<PaginatedResult<User> | User[]> {
     const users = await this.prisma.user.findMany({
       orderBy: { id: 'asc' },
       skip: pagination ? (pagination.page - 1) * pagination.limit : undefined,
@@ -50,7 +57,7 @@ export class UsersService {
     };
   }
 
-  async getUserByUsername(username: string): Promise<UserProfile | undefined> {
+  async findOne(username: string): Promise<UserProfile | undefined> {
     const user = await this.prisma.user.findFirst({
       where: {
         username: {
@@ -101,50 +108,235 @@ export class UsersService {
     };
   }
 
-  async getUserById(id: number): Promise<UserProfile | undefined> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      include: {
+  async findLeaderboard(): Promise<UserLeaderboardEntry[]>;
+  async findLeaderboard(
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<UserLeaderboardEntry>>;
+  async findLeaderboard(
+    pagination?: PaginationParams,
+  ): Promise<UserLeaderboardEntry[] | PaginatedResult<UserLeaderboardEntry>> {
+    const users = await this.prisma.user.findMany({
+      select: {
+        username: true,
         attempts: {
+          where: {
+            quote: {
+              status: 'APPROVED',
+            },
+          },
           select: {
             accuracy: true,
             wpm: true,
           },
         },
-        _count: {
-          select: {
-            discussions: true,
-          },
+      },
+    });
+
+    const leaderboard = users
+      .map((user) => {
+        const averageWpm =
+          user.attempts.length === 0
+            ? 0
+            : user.attempts.reduce((total, attempt) => total + attempt.wpm, 0) /
+              user.attempts.length;
+        const averageAccuracy =
+          user.attempts.length === 0
+            ? 0
+            : user.attempts.reduce(
+                (total, attempt) => total + attempt.accuracy,
+                0,
+              ) / user.attempts.length;
+
+        return {
+          username: user.username,
+          wpm: Math.round(averageWpm),
+          accuracy: Math.round(averageAccuracy),
+        };
+      })
+      .sort((left, right) => {
+        if (right.wpm !== left.wpm) {
+          return right.wpm - left.wpm;
+        }
+
+        if (right.accuracy !== left.accuracy) {
+          return right.accuracy - left.accuracy;
+        }
+
+        return left.username.localeCompare(right.username);
+      });
+
+    if (!pagination) {
+      return leaderboard;
+    }
+
+    const startIndex = (pagination.page - 1) * pagination.limit;
+    const endIndex = startIndex + pagination.limit;
+
+    return {
+      items: leaderboard.slice(startIndex, endIndex),
+      hasNextPage: endIndex < leaderboard.length,
+    };
+  }
+
+  async update(
+    username: string,
+    updateUser: UpdateUserDto,
+  ): Promise<UserProfile | undefined> {
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
         },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingUser) {
+      return undefined;
+    }
+
+    await this.prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        bio:
+          updateUser.bio === undefined
+            ? undefined
+            : updateUser.bio?.trim() || null,
+      },
+    });
+
+    return this.findOne(username);
+  }
+
+  async updateDetails(
+    username: string,
+    updateUser: {
+      username: string;
+      bio: string | null;
+      currentPassword?: string;
+      newPassword?: string;
+    },
+  ): Promise<UserProfile | undefined> {
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+
+    if (!existingUser) {
+      return undefined;
+    }
+
+    const nextUsername = updateUser.username.trim();
+    const nextBio = updateUser.bio?.trim() || null;
+
+    const conflictingUser = await this.prisma.user.findFirst({
+      where: {
+        id: { not: existingUser.id },
+        username: {
+          equals: nextUsername,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (conflictingUser) {
+      throw new ConflictException('Username is already taken.');
+    }
+
+    let nextPassword: string | undefined;
+
+    if (updateUser.newPassword) {
+      if (
+        !updateUser.currentPassword ||
+        !this.authService.verifyPasswordAgainstStoredHash(
+          updateUser.currentPassword,
+          existingUser.password,
+        )
+      ) {
+        throw new UnauthorizedException('Current password is incorrect.');
+      }
+
+      nextPassword = this.authService.hashPasswordForStorage(
+        updateUser.newPassword,
+      );
+    }
+
+    await this.prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        username: nextUsername,
+        bio: nextBio,
+        password: nextPassword,
+      },
+    });
+
+    return this.findOne(nextUsername);
+  }
+
+  async deleteByUsername(username: string): Promise<boolean> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
       },
     });
 
     if (!user) {
-      return undefined;
+      return false;
     }
 
-    const bestWpm = user.attempts.reduce(
-      (currentBest, attempt) => Math.max(currentBest, attempt.wpm),
-      0,
-    );
-    const averageAccuracy =
-      user.attempts.length === 0
-        ? 0
-        : user.attempts.reduce(
-            (total, attempt) => total + attempt.accuracy,
-            0,
-          ) / user.attempts.length;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.discussionReply.deleteMany({
+        where: {
+          authorId: user.id,
+        },
+      });
 
-    return {
-      username: user.username,
-      joinedAt: this.formatMonthYear(user.joinedAt),
-      bio: user.bio,
-      stats: {
-        wpm: Math.round(bestWpm),
-        accuracy: Math.round(averageAccuracy),
-        discussions: user._count.discussions,
-      },
-    };
+      await tx.discussion.deleteMany({
+        where: {
+          authorId: user.id,
+        },
+      });
+
+      await tx.attempt.deleteMany({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      await tx.quote.deleteMany({
+        where: {
+          authorId: user.id,
+        },
+      });
+
+      await tx.user.delete({
+        where: {
+          id: user.id,
+        },
+      });
+    });
+
+    return true;
   }
 
   private formatMonthYear(date: Date) {

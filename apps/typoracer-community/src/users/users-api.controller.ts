@@ -1,13 +1,22 @@
 import {
+  Body,
   Controller,
+  Delete,
+  ForbiddenException,
   Get,
+  HttpCode,
   NotFoundException,
   Param,
+  Patch,
   Query,
   Req,
   Res,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -15,25 +24,23 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { AttemptsService } from '../attempts/attempts.service';
-import { Attempt } from '../attempts/entities/attempt.entity';
+import { AUTH_COOKIE_NAME } from '../auth/auth.constants';
+import { AuthService } from '../auth/auth.service';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
 import { DiscussionsService } from '../discussions/discussions.service';
-import { DiscussionDto } from '../discussions/discussions-api.models';
-import {
-  UserProfileWithDiscussionsDto,
-  UserSummaryDto,
-} from './users-api.models';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserProfileWithDiscussionsDto } from './dto/user-profile-with-discussions.dto';
+import { UserSummaryDto } from './dto/user-summary.dto';
 import { UsersService } from './users.service';
 
 @ApiTags('users')
 @Controller('api/users')
 export class UsersApiController {
   constructor(
-    private readonly attemptsService: AttemptsService,
     private readonly usersService: UsersService,
     private readonly discussionsService: DiscussionsService,
+    private readonly authService: AuthService,
   ) {}
 
   @ApiOperation({ summary: 'List users' })
@@ -46,7 +53,7 @@ export class UsersApiController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.usersService.getUsers(pagination);
+    const result = await this.usersService.findAll(pagination);
     const linkHeader = buildPaginationLinkHeader(
       request,
       pagination,
@@ -65,7 +72,7 @@ export class UsersApiController {
   @ApiNotFoundResponse({ description: 'User was not found.' })
   @Get(':username')
   async findOne(@Param('username') username: string) {
-    const user = await this.usersService.getUserByUsername(username);
+    const user = await this.usersService.findOne(username);
 
     if (!user) {
       throw new NotFoundException('User not found.');
@@ -79,64 +86,71 @@ export class UsersApiController {
     };
   }
 
-  @ApiOperation({ summary: 'List discussions created by a user' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiOkResponse({ type: DiscussionDto, isArray: true })
+  @ApiOperation({ summary: 'Update a user profile by username' })
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: UserProfileWithDiscussionsDto })
+  @ApiBadRequestResponse({ description: 'Invalid update payload.' })
+  @ApiForbiddenResponse({
+    description: 'You can only update your own profile.',
+  })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  @Get(':username/discussions')
-  async findDiscussions(
+  @Patch(':username')
+  async update(
     @Param('username') username: string,
-    @Query() pagination: PaginationQueryDto,
+    @Body() body: UpdateUserDto,
     @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
   ) {
-    const user = await this.usersService.getUserByUsername(username);
+    const currentUser = await this.authService.requireCurrentUser(request);
+
+    if (currentUser.username.toLowerCase() !== username.trim().toLowerCase()) {
+      throw new ForbiddenException('You can only update your own profile.');
+    }
+
+    const user = await this.usersService.update(username, body);
 
     if (!user) {
       throw new NotFoundException('User not found.');
     }
 
-    const result = await this.discussionsService.getDiscussionsByAuthor(
-      user.username,
-      pagination,
-    );
-    const linkHeader = buildPaginationLinkHeader(
-      request,
-      pagination,
-      result.hasNextPage,
-    );
-
-    if (linkHeader) {
-      response.setHeader('Link', linkHeader);
-    }
-
-    return result.items;
+    return {
+      ...user,
+      discussions: await this.discussionsService.getDiscussionsByAuthor(
+        user.username,
+      ),
+    };
   }
 
-  @ApiOperation({ summary: 'List attempts created by a user' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiOkResponse({ type: Attempt, isArray: true })
+  @ApiOperation({ summary: 'Delete a user profile by username' })
+  @ApiBearerAuth()
+  @ApiNoContentResponse({ description: 'User deleted.' })
+  @ApiForbiddenResponse({
+    description: 'You can only delete your own profile.',
+  })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  @Get(':username/attempts')
-  async findAttempts(
+  @Delete(':username')
+  @HttpCode(204)
+  async remove(
     @Param('username') username: string,
-    @Query() pagination: PaginationQueryDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.attemptsService.findByUser(username, pagination);
-    const linkHeader = buildPaginationLinkHeader(
-      request,
-      pagination,
-      result.hasNextPage,
-    );
+    const currentUser = await this.authService.requireCurrentUser(request);
 
-    if (linkHeader) {
-      response.setHeader('Link', linkHeader);
+    if (currentUser.username.toLowerCase() !== username.trim().toLowerCase()) {
+      throw new ForbiddenException('You can only delete your own profile.');
     }
 
-    return result.items;
+    const deleted = await this.usersService.deleteByUsername(username);
+
+    if (!deleted) {
+      throw new NotFoundException('User not found.');
+    }
+
+    response.clearCookie(AUTH_COOKIE_NAME, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
   }
 }

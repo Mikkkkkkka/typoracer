@@ -16,7 +16,7 @@
             <tbody class="leaderboard__body">
             <% users.forEach((user, index) => { %>
                 <tr class="leaderboard__row">
-                    <td class="leaderboard__cell"><%= index + 1 %></td>
+                    <td class="leaderboard__cell"><%= (pagination.page - 1) * pagination.limit + index + 1 %></td>
                     <td class="leaderboard__cell">
                         <a href="/users/<%= user.name %>"><%= user.name %></a>
                     </td>
@@ -26,6 +26,19 @@
             <% }) %>
             </tbody>
         </table>
+        <nav class="pagination-nav" aria-label="Leaderboard pages">
+            <% if (pagination.hasPreviousPage) { %>
+                <a class="pagination-nav__link" href="/leaderboard?page=<%= pagination.page - 1 %>&limit=<%= pagination.limit %>">Previous</a>
+            <% } else { %>
+                <span class="pagination-nav__link pagination-nav__link--disabled">Previous</span>
+            <% } %>
+            <span class="pagination-nav__status">Page <%= pagination.page %></span>
+            <% if (pagination.hasNextPage) { %>
+                <a class="pagination-nav__link" href="/leaderboard?page=<%= pagination.page + 1 %>&limit=<%= pagination.limit %>">Next</a>
+            <% } else { %>
+                <span class="pagination-nav__link pagination-nav__link--disabled">Next</span>
+            <% } %>
+        </nav>
         <blockquote class="competition-section__quote" cite="https://techhelp.ca/quotes-on-competition/">
             "Competition is always a good thing. It forces us to do our best."
         </blockquote>

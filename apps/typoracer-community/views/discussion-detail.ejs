@@ -4,17 +4,30 @@
         <article class="card discussion-card">
             <p class="discussion-card__meta">Started by <a href="/users/<%= discussion.author %>"><%= discussion.author %></a></p>
             <h1><%= discussion.title %></h1>
+            <% if (discussionCreated) { %>
+            <p class="generic-form__success">Discussion created.</p>
+            <% } %>
+            <% if (discussionUpdated) { %>
+            <p class="generic-form__success">Discussion updated.</p>
+            <% } %>
+            <% if (currentUsername && currentUsername.toLowerCase() === discussion.author.toLowerCase()) { %>
+            <p><a href="/forums/<%= discussion.id %>/edit">Edit discussion</a></p>
+            <form action="/forums/<%= discussion.id %>/delete" method="post">
+                <button class="user-info__button" type="submit">Delete discussion</button>
+            </form>
+            <% } %>
             <p><%= discussion.body %></p>
         </article>
-        <% if (currentUser) { %>
+        <% if (currentUsername) { %>
         <form
             class="card discussion-reply-form"
             id="discussion-reply-form"
+            action="/forums/<%= discussion.id %>/replies"
+            method="post"
             data-discussion-id="<%= discussion.id %>"
-            data-current-user="<%= currentUser %>"
         >
             <h2>Post a reply</h2>
-            <p class="discussion-reply-form__signed-in">Replying as <a href="/users/<%= currentUser %>"><%= currentUser %></a></p>
+            <p class="discussion-reply-form__signed-in">Replying as <a href="/users/<%= currentUsername %>"><%= currentUsername %></a></p>
             <label class="discussion-reply-form__label" for="reply-text">Reply</label>
             <textarea
                 class="discussion-reply-form__textarea"
@@ -23,8 +36,8 @@
                 maxlength="400"
                 placeholder="Write something useful."
                 required
-            ></textarea>
-            <p class="discussion-reply-form__status" id="discussion-reply-status" role="status" aria-live="polite"></p>
+            ><%= replyDraftText ?? '' %></textarea>
+            <p class="discussion-reply-form__status" id="discussion-reply-status" role="status" aria-live="polite"><%= replyFormError ?? replyFormSuccess ?? '' %></p>
             <button class="discussion-reply-form__submit" type="submit">Post reply</button>
         </form>
         <% } else { %>
@@ -35,10 +48,22 @@
         <% } %>
         <div class="discussion-replies">
             <h2>Replies</h2>
+            <% if (replyUpdated) { %>
+            <p class="generic-form__success">Reply updated.</p>
+            <% } %>
+            <% if (replyDeleted) { %>
+            <p class="generic-form__success">Reply deleted.</p>
+            <% } %>
             <div class="discussion-replies__list" id="discussion-replies-list">
             <% discussion.replies.forEach((reply) => { %>
-                <article class="card discussion-reply">
+                <article class="card discussion-reply" id="reply-<%= reply.id %>">
                     <p class="discussion-reply__author"><a href="/users/<%= reply.author %>"><%= reply.author %></a></p>
+                    <% if (currentUsername && currentUsername.toLowerCase() === reply.author.toLowerCase()) { %>
+                    <p><a href="/forums/<%= discussion.id %>/replies/<%= reply.id %>/edit">Edit reply</a></p>
+                    <form action="/forums/<%= discussion.id %>/replies/<%= reply.id %>/delete" method="post">
+                        <button class="user-info__button" type="submit">Delete reply</button>
+                    </form>
+                    <% } %>
                     <p><%= reply.text %></p>
                 </article>
             <% }) %>

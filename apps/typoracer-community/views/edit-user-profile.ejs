@@ -1,0 +1,71 @@
+<main class="page-content">
+    <section class="page-section page-section--narrow">
+        <div class="section-intro">
+            <p class="discussion-card__meta">Account settings for <a href="/users/<%= encodeURIComponent(user.username) %>"><%= user.username %></a></p>
+            <h1>Edit profile</h1>
+        </div>
+
+        <form class="generic-form" action="/users/<%= encodeURIComponent(user.username) %>/edit" method="post" novalidate>
+            <div class="generic-form__container">
+                <label class="generic-form__label" for="username">Username</label>
+                <input
+                    id="username"
+                    class="generic-form__text-input"
+                    type="text"
+                    name="username"
+                    minlength="3"
+                    maxlength="32"
+                    required
+                    value="<%= formValues.username %>"
+                />
+
+                <label class="generic-form__label" for="bio">Bio</label>
+                <textarea
+                    id="bio"
+                    class="generic-form__textarea"
+                    name="bio"
+                    maxlength="500"
+                    placeholder="Tell other typists about your setup, goals, or favorite modes."
+                ><%= formValues.bio %></textarea>
+
+                <label class="generic-form__label" for="currentPassword">Current password</label>
+                <input
+                    id="currentPassword"
+                    class="generic-form__text-input"
+                    type="password"
+                    name="currentPassword"
+                />
+
+                <label class="generic-form__label" for="newPassword">New password</label>
+                <input
+                    id="newPassword"
+                    class="generic-form__text-input"
+                    type="password"
+                    name="newPassword"
+                />
+
+                <label class="generic-form__label" for="confirmNewPassword">Confirm new password</label>
+                <input
+                    id="confirmNewPassword"
+                    class="generic-form__text-input"
+                    type="password"
+                    name="confirmNewPassword"
+                />
+
+                <p class="discussion-card__meta">Leave the password fields empty if you only want to change your username or bio.</p>
+
+                <% if (profileFormError) { %>
+                    <p class="generic-form__error" role="alert"><%= profileFormError %></p>
+                <% } %>
+                <% if (profileFormSuccess) { %>
+                    <p class="generic-form__success" role="status"><%= profileFormSuccess %></p>
+                <% } %>
+
+                <div class="generic-form__actions">
+                    <button class="generic-form__submit-button" type="submit">Save changes</button>
+                    <a class="generic-form__secondary-link" href="/users/<%= encodeURIComponent(user.username) %>">Back to profile</a>
+                </div>
+            </div>
+        </form>
+    </section>
+</main>

@@ -10,12 +10,11 @@
     const status = document.getElementById('discussion-reply-status');
     const textInput = document.getElementById('reply-text');
     const discussionId = form.dataset.discussionId;
-    const currentUser = form.dataset.currentUser;
 
     form.addEventListener('submit', async function (event) {
       event.preventDefault();
 
-      if (!(textInput instanceof HTMLTextAreaElement) || !discussionId || !currentUser) {
+      if (!(textInput instanceof HTMLTextAreaElement) || !discussionId) {
         return;
       }
 
@@ -39,7 +38,6 @@
           headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
-            'X-User': currentUser,
           },
           body: JSON.stringify({ text }),
         });

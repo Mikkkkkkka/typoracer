@@ -1,103 +1,339 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
+  NotFoundException,
   Param,
-  ParseIntPipe,
-  Patch,
   Post,
-  Query,
   Req,
   Res,
 } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiCreatedResponse,
-  ApiNoContentResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiExcludeController } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
-import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
+import { AuthService } from '../auth/auth.service';
+import { QuotesService } from '../quotes/quotes.service';
 import { AttemptsService } from './attempts.service';
-import { CreateAttemptDto } from './dto/create-attempt.dto';
-import { UpdateAttemptDto } from './dto/update-attempt.dto';
-import { Attempt } from './entities/attempt.entity';
 
-@ApiTags('attempts')
-@Controller('api/attempts')
+type AttemptFormValues = {
+  quoteId: string;
+  wpm: string;
+  accuracy: string;
+  maxRawWpm: string;
+};
+
+@ApiExcludeController()
+@Controller('attempts')
 export class AttemptsController {
-  constructor(private readonly attemptsService: AttemptsService) {}
+  constructor(
+    private readonly attemptsService: AttemptsService,
+    private readonly authService: AuthService,
+    private readonly quotesService: QuotesService,
+  ) {}
 
-  @ApiOperation({ summary: 'Create a typing attempt' })
-  @ApiCreatedResponse({ type: Attempt })
-  @ApiBadRequestResponse({ description: 'Invalid attempt payload.' })
-  @ApiNotFoundResponse({ description: 'Related quote or user was not found.' })
-  @Post()
-  create(@Body() body: CreateAttemptDto) {
-    return this.attemptsService.create({
-      ...body,
-      maxRawWpm: body.maxRawWpm ?? body.wpm,
+  @Get()
+  async getAttemptsPage(@Req() request: Request, @Res() response: Response) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const attempts = await this.attemptsService.findDetailedByUser(
+      currentUser.username,
+    );
+
+    return response.render('attempts', {
+      currentPath: '/attempts',
+      title: 'Attempts',
+      currentUser,
+      attempts: attempts.map((attempt) => ({
+        ...attempt,
+        createdAt: this.formatLongDate(attempt.createdAt),
+      })),
+      attemptCreated: request.query.created === '1',
+      attemptDeleted: request.query.deleted === '1',
     });
   }
 
-  @ApiOperation({ summary: 'List all attempts' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiOkResponse({ type: Attempt, isArray: true })
-  @Get()
-  async findAll(
-    @Query() pagination: PaginationQueryDto,
+  @Get('new')
+  async getCreateAttemptPage(
     @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
+    @Res() response: Response,
   ) {
-    const result = await this.attemptsService.findAll(pagination);
-    const linkHeader = buildPaginationLinkHeader(
-      request,
-      pagination,
-      result.hasNextPage,
-    );
+    await this.authService.requireCurrentUser(request);
+    return this.renderCreateAttemptPage(request, response);
+  }
 
-    if (linkHeader) {
-      response.setHeader('Link', linkHeader);
+  @Post()
+  async createAttempt(
+    @Body() body: Record<string, string | undefined>,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const form = this.normalizeForm(body);
+    const validationError = this.validateForm(form);
+
+    if (validationError) {
+      return this.renderCreateAttemptPage(request, response, {
+        error: validationError,
+        form,
+      });
     }
 
-    return result.items;
+    const attempt = await this.attemptsService.create({
+      quoteId: Number(form.quoteId),
+      userId: currentUser.id,
+      wpm: Number(form.wpm),
+      accuracy: Number(form.accuracy),
+      maxRawWpm: form.maxRawWpm ? Number(form.maxRawWpm) : Number(form.wpm),
+    });
+
+    return response.redirect(`/attempts/${attempt.id}?created=1`);
   }
 
-  @ApiOperation({ summary: 'Get an attempt by id' })
-  @ApiOkResponse({ type: Attempt })
-  @ApiNotFoundResponse({ description: 'Attempt was not found.' })
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.attemptsService.findOne(id);
-  }
-
-  @ApiOperation({ summary: 'Update an attempt' })
-  @ApiOkResponse({ type: Attempt })
-  @ApiBadRequestResponse({ description: 'Invalid update payload.' })
-  @ApiNotFoundResponse({
-    description: 'Attempt, quote, or user was not found.',
-  })
-  @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: UpdateAttemptDto,
+  @Get(':attemptId')
+  async getAttemptDetail(
+    @Param('attemptId') attemptId: string,
+    @Req() request: Request,
+    @Res() response: Response,
   ) {
-    return this.attemptsService.update(id, body);
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const attempt = await this.getOwnedAttempt(
+      Number(attemptId),
+      currentUser.id,
+    );
+
+    if (!attempt) {
+      return response.status(404).render('not-found', {
+        currentPath: '',
+        title: 'Attempt Not Found',
+        currentUser,
+      });
+    }
+
+    return response.render('attempt-detail', {
+      currentPath: '/attempts',
+      title: `Attempt ${attempt.id}`,
+      currentUser,
+      attempt: {
+        ...attempt,
+        createdAt: this.formatLongDate(attempt.createdAt),
+      },
+      attemptCreated: request.query.created === '1',
+      attemptUpdated: request.query.updated === '1',
+    });
   }
 
-  @ApiOperation({ summary: 'Delete an attempt' })
-  @ApiOkResponse({ type: Attempt })
-  @ApiNoContentResponse({ description: 'Attempt deleted.' })
-  @ApiNotFoundResponse({ description: 'Attempt was not found.' })
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.attemptsService.remove(id);
+  @Get(':attemptId/edit')
+  async getEditAttemptPage(
+    @Param('attemptId') attemptId: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    await this.authService.requireCurrentUser(request);
+    return this.renderEditAttemptPage(Number(attemptId), request, response);
+  }
+
+  @Post(':attemptId/edit')
+  async updateAttempt(
+    @Param('attemptId') attemptId: string,
+    @Body() body: Record<string, string | undefined>,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const numericAttemptId = Number(attemptId);
+    const ownedAttempt = await this.getOwnedAttempt(
+      numericAttemptId,
+      currentUser.id,
+    );
+
+    if (!ownedAttempt) {
+      return response.status(404).render('not-found', {
+        currentPath: '',
+        title: 'Attempt Not Found',
+        currentUser,
+      });
+    }
+
+    const form = this.normalizeForm(body);
+    const validationError = this.validateForm(form);
+
+    if (validationError) {
+      return this.renderEditAttemptPage(numericAttemptId, request, response, {
+        error: validationError,
+        form,
+      });
+    }
+
+    await this.attemptsService.update(numericAttemptId, {
+      quoteId: Number(form.quoteId),
+      userId: currentUser.id,
+      wpm: Number(form.wpm),
+      accuracy: Number(form.accuracy),
+      maxRawWpm: form.maxRawWpm ? Number(form.maxRawWpm) : Number(form.wpm),
+    });
+
+    return response.redirect(`/attempts/${numericAttemptId}?updated=1`);
+  }
+
+  @Post(':attemptId/delete')
+  async deleteAttempt(
+    @Param('attemptId') attemptId: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+    const numericAttemptId = Number(attemptId);
+    const ownedAttempt = await this.getOwnedAttempt(
+      numericAttemptId,
+      currentUser.id,
+    );
+
+    if (!ownedAttempt) {
+      return response.status(404).render('not-found', {
+        currentPath: '',
+        title: 'Attempt Not Found',
+        currentUser,
+      });
+    }
+
+    await this.attemptsService.remove(numericAttemptId);
+
+    return response.redirect('/attempts?deleted=1');
+  }
+
+  private async renderCreateAttemptPage(
+    request: Request,
+    response: Response,
+    options?: {
+      error?: string;
+      form?: AttemptFormValues;
+    },
+  ) {
+    const currentUser = await this.authService.getCurrentUser(request);
+
+    if (!currentUser) {
+      return response.redirect('/auth/login');
+    }
+
+    return response.render('create-attempt', {
+      currentPath: '/attempts',
+      title: 'Add Attempt',
+      currentUser,
+      quotes: await this.quotesService.findAll(),
+      formValues: options?.form ?? {
+        quoteId: '',
+        wpm: '',
+        accuracy: '',
+        maxRawWpm: '',
+      },
+      attemptFormError:
+        options?.error ?? this.getQueryMessage(request, 'error'),
+    });
+  }
+
+  private async renderEditAttemptPage(
+    attemptId: number,
+    request: Request,
+    response: Response,
+    options?: {
+      error?: string;
+      form?: AttemptFormValues;
+    },
+  ) {
+    const currentUser = await this.authService.getCurrentUser(request);
+
+    if (!currentUser) {
+      return response.redirect('/auth/login');
+    }
+
+    const attempt = await this.getOwnedAttempt(attemptId, currentUser.id);
+
+    if (!attempt) {
+      return response.status(404).render('not-found', {
+        currentPath: '',
+        title: 'Attempt Not Found',
+        currentUser,
+      });
+    }
+
+    return response.render('edit-attempt', {
+      currentPath: '/attempts',
+      title: `Edit Attempt ${attempt.id}`,
+      currentUser,
+      attempt,
+      quotes: await this.quotesService.findAll(),
+      formValues: options?.form ?? {
+        quoteId: String(attempt.quoteId),
+        wpm: String(attempt.wpm),
+        accuracy: String(attempt.accuracy),
+        maxRawWpm: String(attempt.maxRawWpm),
+      },
+      attemptFormError:
+        options?.error ?? this.getQueryMessage(request, 'error'),
+    });
+  }
+
+  private async getOwnedAttempt(attemptId: number, userId: number) {
+    if (!Number.isInteger(attemptId) || attemptId <= 0) {
+      return null;
+    }
+
+    try {
+      const attempt = await this.attemptsService.findDetailedOne(attemptId);
+      return attempt.userId === userId ? attempt : null;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return null;
+      }
+
+      throw error;
+    }
+  }
+
+  private normalizeForm(
+    body: Record<string, string | undefined>,
+  ): AttemptFormValues {
+    return {
+      quoteId: body.quoteId?.trim() ?? '',
+      wpm: body.wpm?.trim() ?? '',
+      accuracy: body.accuracy?.trim() ?? '',
+      maxRawWpm: body.maxRawWpm?.trim() ?? '',
+    };
+  }
+
+  private validateForm(form: AttemptFormValues) {
+    const quoteId = Number(form.quoteId);
+    const wpm = Number(form.wpm);
+    const accuracy = Number(form.accuracy);
+    const maxRawWpm = form.maxRawWpm ? Number(form.maxRawWpm) : wpm;
+
+    if (!Number.isInteger(quoteId) || quoteId <= 0) {
+      return 'Choose a quote from the list.';
+    }
+
+    if (!Number.isFinite(wpm) || wpm <= 0) {
+      return 'WPM must be a positive number.';
+    }
+
+    if (!Number.isFinite(accuracy) || accuracy <= 0 || accuracy > 100) {
+      return 'Accuracy must be between 0 and 100.';
+    }
+
+    if (!Number.isFinite(maxRawWpm) || maxRawWpm <= 0) {
+      return 'Max raw WPM must be a positive number.';
+    }
+
+    return null;
+  }
+
+  private getQueryMessage(request: Request, key: string) {
+    const value = request.query[key];
+    return typeof value === 'string' ? value : null;
+  }
+
+  private formatLongDate(value: string) {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date(value));
   }
 }

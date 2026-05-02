@@ -1,51 +1,61 @@
-import { Controller, Get, Next, Render, Req, Res } from '@nestjs/common';
-import type { NextFunction, Request, Response } from 'express';
+import { Controller, Get, Query, Render, Req, Res } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
+import { AuthService } from '../auth/auth.service';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { UsersService } from '../users/users.service';
 
+@ApiExcludeController()
 @Controller()
 export class PagesController {
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
+
   @Get()
   @Render('home')
-  getHome() {
-    return { currentPath: '/', title: 'Typoracer Community' };
+  async getHome(@Req() request: Request) {
+    return {
+      currentPath: '/',
+      title: 'Typoracer Community',
+      currentUser: await this.authService.getCurrentUser(request),
+      accountDeleted: request.query.accountDeleted === '1',
+    };
   }
 
   @Get('leaderboard')
   @Render('leaderboard')
-  getLeaderboard() {
+  async getLeaderboard(
+    @Req() request: Request,
+    @Query() pagination: PaginationQueryDto,
+  ) {
+    const leaderboard = await this.usersService.findLeaderboard(pagination);
+
     return {
       currentPath: '/leaderboard',
       title: 'Typoracer Leaderboard',
-      users: [
-        { name: 'SpeedyFox', wpm: 102, acc: 99 },
-        { name: 'KeyMaster', wpm: 97, acc: 96 },
-        { name: 'SwiftType', wpm: 93, acc: 95 },
-      ],
-    };
-  }
-
-  @Get('quote-submission')
-  @Render('quote-submission')
-  getQuoteSubmission() {
-    return {
-      currentPath: '/quote-submission',
-      title: 'Typoracer Quote submission',
+      currentUser: await this.authService.getCurrentUser(request),
+      users: leaderboard.items.map((user) => ({
+        name: user.username,
+        wpm: user.wpm,
+        acc: user.accuracy,
+      })),
+      pagination: {
+        page: pagination.page,
+        limit: pagination.limit,
+        hasPreviousPage: pagination.page > 1,
+        hasNextPage: leaderboard.hasNextPage,
+      },
     };
   }
 
   @Get('*')
-  getNotFound(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Next() next: NextFunction,
-  ) {
-    // Let Apollo handle the GraphQL sandbox and introspection GET requests.
-    if (req.path === '/graphql') {
-      return next();
-    }
-
+  async getNotFound(@Req() request: Request, @Res() res: Response) {
     return res.status(404).render('not-found', {
       currentPath: '',
       title: 'Page Not Found',
+      currentUser: await this.authService.getCurrentUser(request),
     });
   }
 }
