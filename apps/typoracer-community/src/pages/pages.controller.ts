@@ -1,12 +1,17 @@
-import { Controller, Get, Render, Req, Res } from '@nestjs/common';
+import { Controller, Get, Query, Render, Req, Res } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AuthService } from '../auth/auth.service';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { UsersService } from '../users/users.service';
 
 @ApiExcludeController()
 @Controller()
 export class PagesController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Get()
   @Render('home')
@@ -21,16 +26,27 @@ export class PagesController {
 
   @Get('leaderboard')
   @Render('leaderboard')
-  async getLeaderboard(@Req() request: Request) {
+  async getLeaderboard(
+    @Req() request: Request,
+    @Query() pagination: PaginationQueryDto,
+  ) {
+    const leaderboard = await this.usersService.findLeaderboard(pagination);
+
     return {
       currentPath: '/leaderboard',
       title: 'Typoracer Leaderboard',
       currentUser: await this.authService.getCurrentUser(request),
-      users: [
-        { name: 'SpeedyFox', wpm: 102, acc: 99 },
-        { name: 'KeyMaster', wpm: 97, acc: 96 },
-        { name: 'SwiftType', wpm: 93, acc: 95 },
-      ],
+      users: leaderboard.items.map((user) => ({
+        name: user.username,
+        wpm: user.wpm,
+        acc: user.accuracy,
+      })),
+      pagination: {
+        page: pagination.page,
+        limit: pagination.limit,
+        hasPreviousPage: pagination.page > 1,
+        hasNextPage: leaderboard.hasNextPage,
+      },
     };
   }
 
