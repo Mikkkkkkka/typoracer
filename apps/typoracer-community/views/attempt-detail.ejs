@@ -1,0 +1,25 @@
+<main class="page-content">
+    <section class="page-section discussion-section">
+        <p class="discussion-section__back"><a href="/attempts">Back to attempts</a></p>
+        <article class="card discussion-card">
+            <p class="discussion-card__meta">Attempt #<%= attempt.id %></p>
+            <h1>Typing result</h1>
+            <% if (attemptCreated) { %>
+                <p class="generic-form__success">Attempt added.</p>
+            <% } %>
+            <% if (attemptUpdated) { %>
+                <p class="generic-form__success">Attempt updated.</p>
+            <% } %>
+            <p><strong>Quote:</strong> <a href="/quotes/<%= attempt.quoteId %>">#<%= attempt.quoteId %></a></p>
+            <p><%= attempt.quoteText %></p>
+            <p><strong>WPM:</strong> <%= attempt.wpm %></p>
+            <p><strong>Accuracy:</strong> <%= attempt.accuracy %>%</p>
+            <p><strong>Max raw WPM:</strong> <%= attempt.maxRawWpm %></p>
+            <p><strong>Added:</strong> <%= attempt.createdAt %></p>
+            <p><a href="/attempts/<%= attempt.id %>/edit">Edit attempt</a></p>
+            <form action="/attempts/<%= attempt.id %>/delete" method="post">
+                <button class="user-info__button" type="submit">Delete attempt</button>
+            </form>
+        </article>
+    </section>
+</main>

@@ -249,6 +249,7 @@ h3 {
 .discussion-reply-form__textarea,
 .generic-form__textarea,
 .generic-form__text-input,
+select,
 input[type='text'],
 textarea {
     width: 100%;
@@ -409,6 +410,11 @@ textarea {
 .forum-thread__excerpt {
     margin: 0;
     color: #d1d5db;
+}
+
+.attempts-table__quote-text {
+    margin-top: 6px;
+    color: #9ca3af;
 }
 
 .main-footer {

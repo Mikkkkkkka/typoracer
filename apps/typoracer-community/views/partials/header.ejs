@@ -9,6 +9,9 @@
         <a class="nav-bar__link"  href="/quotes">quotes</a>
         <a class="nav-bar__link" href="/leaderboard">leaderboard</a>
         <a class="nav-bar__link" href="/forums">forums</a>
+        <% if (viewer) { %>
+            <a class="nav-bar__link" href="/attempts">attempts</a>
+        <% } %>
     </nav>
     <div class="user-info">
         <% if (viewer) { %>
