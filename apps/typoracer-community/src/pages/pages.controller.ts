@@ -1,6 +1,6 @@
-import { Controller, Get, Query, Render, Req, Res } from '@nestjs/common';
+import { Controller, Get, Next, Query, Render, Req, Res } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { UsersService } from '../users/users.service';
@@ -51,7 +51,20 @@ export class PagesController {
   }
 
   @Get('*')
-  async getNotFound(@Req() request: Request, @Res() res: Response) {
+  async getNotFound(
+    @Req() request: Request,
+    @Res() res: Response,
+    @Next() next: NextFunction,
+  ) {
+    if (
+      request.path === '/graphql' ||
+      request.path.startsWith('/graphql/') ||
+      request.path === '/api' ||
+      request.path.startsWith('/api/')
+    ) {
+      return next();
+    }
+
     return res.status(404).render('not-found', {
       currentPath: '',
       title: 'Page Not Found',
