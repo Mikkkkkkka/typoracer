@@ -35,6 +35,7 @@ function initializeQuoteSubmissionPage() {
 
   loadSubmissions();
   setupEventListeners();
+  void syncStoredSubmissions();
 }
 
 function setupEventListeners() {
@@ -278,21 +279,45 @@ function editSubmission(id) {
   updateSubmitButton(true);
 }
 
-function deleteSubmission(id) {
+async function deleteSubmission(id) {
   if (
-    !confirm('Are you sure you want to remove this item from your local submission list?')
+    !confirm('Are you sure you want to delete this quote?')
   ) {
     return;
   }
 
-  const submissions = getSubmissions();
-  const filteredSubmissions = submissions.filter((sub) => sub.id !== id);
+  clearFormError();
 
-  saveSubmissions(filteredSubmissions);
-  loadSubmissions();
+  try {
+    const response = await fetch(`/api/quotes/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+      },
+      credentials: 'same-origin',
+    });
 
-  if (editingId === id) {
-    clearForm();
+    const payload = await readJsonSafely(response);
+
+    if (!response.ok) {
+      throw new Error(payload?.message || 'Unable to delete quote.');
+    }
+
+    const submissions = getSubmissions();
+    const filteredSubmissions = submissions.filter((sub) => sub.id !== id);
+
+    saveSubmissions(filteredSubmissions);
+    loadSubmissions();
+
+    if (editingId === id) {
+      clearForm();
+    }
+
+    setFormError('Quote deleted.');
+  } catch (error) {
+    setFormError(
+      error instanceof Error ? error.message : 'Unable to delete quote.',
+    );
   }
 }
 
@@ -303,6 +328,106 @@ function getSubmissions() {
 
 function saveSubmissions(submissions) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions));
+}
+
+async function syncStoredSubmissions() {
+  try {
+    const submissions = getSubmissions();
+
+    if (!Array.isArray(submissions) || submissions.length === 0) {
+      return;
+    }
+
+    let nextSubmissions = submissions.slice();
+    let hasChanges = false;
+
+    for (const submission of submissions) {
+      const syncedSubmission = await syncSubmission(submission);
+
+      if (!syncedSubmission) {
+        continue;
+      }
+
+      const currentIndex = nextSubmissions.findIndex(
+        (storedSubmission) => storedSubmission.id === submission.id,
+      );
+
+      if (currentIndex === -1) {
+        continue;
+      }
+
+      if (
+        JSON.stringify(nextSubmissions[currentIndex]) !==
+        JSON.stringify(syncedSubmission)
+      ) {
+        nextSubmissions[currentIndex] = syncedSubmission;
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      saveSubmissions(nextSubmissions);
+      loadSubmissions();
+    }
+  } catch {
+    return;
+  }
+}
+
+async function syncSubmission(submission) {
+  if (!submission || typeof submission !== 'object') {
+    return null;
+  }
+
+  const submissionInput = {
+    text: String(submission.text || '').trim(),
+    source:
+      submission.source === 'Unknown' ? '' : String(submission.source || '').trim(),
+  };
+
+  if (validateSubmissionInput(submissionInput)) {
+    return null;
+  }
+
+  const updateResponse = await sendQuoteRequest(
+    `/api/quotes/${encodeURIComponent(String(submission.id || ''))}`,
+    'PATCH',
+    submissionInput,
+  );
+
+  if (updateResponse.ok) {
+    const payload = await readJsonSafely(updateResponse);
+
+    return {
+      ...submission,
+      ...createStoredSubmission(payload, submissionInput),
+      createdAt: submission.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  if (updateResponse.status !== 404) {
+    return null;
+  }
+
+  const createResponse = await sendQuoteRequest(
+    '/api/quotes',
+    'POST',
+    submissionInput,
+  );
+
+  if (!createResponse.ok) {
+    return null;
+  }
+
+  const payload = await readJsonSafely(createResponse);
+
+  return {
+    ...submission,
+    ...createStoredSubmission(payload, submissionInput),
+    createdAt: submission.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 function createStoredSubmission(payload, submissionInput) {
@@ -316,6 +441,18 @@ function createStoredSubmission(payload, submissionInput) {
     createdAt: nowIso,
     updatedAt: nowIso,
   };
+}
+
+function sendQuoteRequest(url, method, submissionInput) {
+  return fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(submissionInput),
+    credentials: 'same-origin',
+  });
 }
 
 async function readJsonSafely(response) {
