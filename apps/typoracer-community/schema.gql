@@ -1,0 +1,459 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""Paginated attempt collection."""
+type AttemptPageType {
+  """Whether there is another page after the current one."""
+  hasNextPage: Boolean!
+
+  """Whether there is a page before the current one."""
+  hasPreviousPage: Boolean!
+
+  """Current page of attempts."""
+  items: [AttemptType!]!
+
+  """Page size."""
+  limit: Int!
+
+  """Current page number."""
+  page: Int!
+}
+
+"""Typing attempt for a quote."""
+type AttemptType {
+  """Accuracy percentage."""
+  accuracy: Float!
+
+  """ISO timestamp when the attempt was created."""
+  createdAt: String!
+
+  """Attempt identifier."""
+  id: Int!
+
+  """Maximum raw WPM recorded during the run."""
+  maxRawWpm: Float!
+
+  """Related quote identifier."""
+  quoteId: Int!
+
+  """User identifier."""
+  userId: Int!
+
+  """Words per minute."""
+  wpm: Float!
+}
+
+"""Input for creating a typing attempt."""
+input CreateAttemptInput {
+  """Accuracy percentage."""
+  accuracy: Float!
+
+  """Optional max raw WPM value."""
+  maxRawWpm: Float
+
+  """Related quote identifier."""
+  quoteId: Int!
+
+  """User identifier."""
+  userId: Int!
+
+  """Words per minute."""
+  wpm: Float!
+}
+
+"""Input for creating a discussion."""
+input CreateDiscussionInput {
+  """Full discussion body."""
+  body: String!
+
+  """Short list summary."""
+  excerpt: String!
+
+  """Discussion title."""
+  title: String!
+}
+
+"""Input for posting a discussion reply."""
+input CreateDiscussionReplyInput {
+  """Reply text."""
+  text: String!
+}
+
+"""Paginated discussion collection."""
+type DiscussionPageType {
+  """Whether there is another page after the current one."""
+  hasNextPage: Boolean!
+
+  """Whether there is a page before the current one."""
+  hasPreviousPage: Boolean!
+
+  """Current page of discussions."""
+  items: [DiscussionType!]!
+
+  """Page size."""
+  limit: Int!
+
+  """Current page number."""
+  page: Int!
+}
+
+"""Reply inside a discussion thread."""
+type DiscussionReplyType {
+  """Username of the reply author."""
+  author: String!
+
+  """Reply identifier."""
+  id: Int!
+
+  """Reply text."""
+  text: String!
+}
+
+"""Forum discussion thread."""
+type DiscussionType {
+  """Author username."""
+  author: String!
+
+  """Full discussion body."""
+  body: String!
+
+  """Short summary shown in lists."""
+  excerpt: String!
+
+  """Discussion identifier."""
+  id: Int!
+
+  """Replies posted in the discussion."""
+  replies: [DiscussionReplyType]
+
+  """Discussion title."""
+  title: String!
+}
+
+"""Leaderboard row based on approved quote attempts."""
+type LeaderboardEntryType {
+  """Average accuracy rounded to the nearest integer."""
+  accuracy: Int!
+
+  """Public username."""
+  username: String!
+
+  """Average WPM rounded to the nearest integer."""
+  wpm: Int!
+}
+
+"""Paginated leaderboard."""
+type LeaderboardPageType {
+  """Whether there is another page after the current one."""
+  hasNextPage: Boolean!
+
+  """Whether there is a page before the current one."""
+  hasPreviousPage: Boolean!
+
+  """Current page of leaderboard entries."""
+  items: [LeaderboardEntryType!]!
+
+  """Page size."""
+  limit: Int!
+
+  """Current page number."""
+  page: Int!
+}
+
+type Mutation {
+  """Post a reply to a discussion."""
+  addDiscussionReply(discussionId: Int!, input: CreateDiscussionReplyInput!): DiscussionReplyType!
+
+  """Create a typing attempt."""
+  createAttempt(input: CreateAttemptInput!): AttemptType!
+
+  """Create a discussion as the authenticated user."""
+  createDiscussion(input: CreateDiscussionInput!): DiscussionType!
+
+  """Delete a typing attempt."""
+  deleteAttempt(attemptId: Int!): Boolean!
+
+  """Delete your own discussion."""
+  deleteDiscussion(discussionId: Int!): Boolean!
+
+  """Delete your own discussion reply."""
+  deleteDiscussionReply(discussionId: Int!, replyId: Int!): Boolean!
+
+  """Delete your own quote."""
+  deleteQuote(quoteId: Int!): Boolean!
+
+  """Submit a new quote for moderation as the authenticated user."""
+  submitQuote(input: SubmitQuoteInput!): QuoteSubmissionType!
+
+  """Update an existing typing attempt."""
+  updateAttempt(attemptId: Int!, input: UpdateAttemptInput!): AttemptType!
+
+  """Update your own discussion."""
+  updateDiscussion(discussionId: Int!, input: UpdateDiscussionInput!): DiscussionType!
+
+  """Update your own reply."""
+  updateDiscussionReply(discussionId: Int!, input: UpdateDiscussionReplyInput!, replyId: Int!): DiscussionReplyType!
+
+  """Update your own submitted quote."""
+  updateQuote(input: UpdateQuoteInput!, quoteId: Int!): QuoteSubmissionType!
+}
+
+type Query {
+  """Get one attempt by id."""
+  attempt(id: Int!): AttemptType!
+
+  """Browse attempts with pagination."""
+  attempts(
+    """Maximum number of items to return."""
+    limit: Int! = 20
+
+    """1-based page number."""
+    page: Int! = 1
+  ): AttemptPageType!
+
+  """Get one discussion by id."""
+  discussion(id: Int!): DiscussionType!
+
+  """Browse discussions with pagination."""
+  discussions(
+    """Maximum number of items to return."""
+    limit: Int! = 20
+
+    """1-based page number."""
+    page: Int! = 1
+  ): DiscussionPageType!
+
+  """Get the typing leaderboard based on approved quote attempts."""
+  leaderboard(
+    """Maximum number of items to return."""
+    limit: Int! = 20
+
+    """1-based page number."""
+    page: Int! = 1
+  ): LeaderboardPageType!
+
+  """Get one approved quote by id."""
+  quote(id: Int!): QuoteType!
+
+  """Browse attempts for a single quote."""
+  quoteAttempts(
+    """Maximum number of items to return."""
+    limit: Int! = 20
+
+    """1-based page number."""
+    page: Int! = 1
+    quoteId: Int!
+  ): AttemptPageType!
+
+  """Browse approved quotes with pagination."""
+  quotes(
+    """Maximum number of items to return."""
+    limit: Int! = 20
+
+    """1-based page number."""
+    page: Int! = 1
+  ): QuotePageType!
+
+  """Get one user profile by username."""
+  user(username: String!): UserType!
+
+  """Count attempts created by a user."""
+  userAttemptCount(username: String!): Int!
+
+  """Browse attempts created by a single user."""
+  userAttempts(
+    """Maximum number of items to return."""
+    limit: Int! = 20
+
+    """1-based page number."""
+    page: Int! = 1
+    username: String!
+  ): AttemptPageType!
+
+  """Count discussions created by a user."""
+  userDiscussionCount(username: String!): Int!
+
+  """Browse users with pagination."""
+  users(
+    """Maximum number of items to return."""
+    limit: Int! = 20
+
+    """1-based page number."""
+    page: Int! = 1
+  ): UserPageType!
+}
+
+"""Author information for a quote."""
+type QuoteAuthorType {
+  """Public username of the author."""
+  username: String!
+}
+
+"""Paginated quote collection."""
+type QuotePageType {
+  """Whether there is another page after the current one."""
+  hasNextPage: Boolean!
+
+  """Whether there is a page before the current one."""
+  hasPreviousPage: Boolean!
+
+  """Current page of quotes."""
+  items: [QuoteType!]!
+
+  """Page size."""
+  limit: Int!
+
+  """Current page number."""
+  page: Int!
+}
+
+"""Best record for a quote by a single player."""
+type QuoteRecordEntryType {
+  """Rounded accuracy percentage."""
+  accuracy: Int!
+
+  """Public username of the player."""
+  username: String!
+
+  """Rounded words per minute."""
+  wpm: Int!
+}
+
+"""Mutation result for quote submission workflow."""
+type QuoteSubmissionType {
+  """Quote identifier."""
+  id: Int!
+
+  """Optional source of the quote."""
+  source: String
+
+  """Current moderation status."""
+  status: String!
+
+  """Submitted quote text."""
+  text: String!
+}
+
+"""Quote available for typing practice."""
+type QuoteType {
+  """Alternative text for the preview image."""
+  alt: String!
+
+  """Author of the quote."""
+  author: QuoteAuthorType
+
+  """Human-readable creation date."""
+  createdAt: String
+
+  """Quote identifier."""
+  id: Int!
+
+  """Optional preview image URL."""
+  image: String
+
+  """Best record per player for this quote."""
+  records: [QuoteRecordEntryType]
+
+  """Quote text shown to the user."""
+  text: String!
+}
+
+"""Input for submitting a quote for moderation."""
+input SubmitQuoteInput {
+  """Optional source attribution."""
+  source: String
+
+  """Quote text to submit."""
+  text: String!
+}
+
+"""Input for updating an attempt."""
+input UpdateAttemptInput {
+  """Updated accuracy percentage."""
+  accuracy: Float
+
+  """Updated max raw WPM."""
+  maxRawWpm: Float
+
+  """Updated quote identifier."""
+  quoteId: Int
+
+  """Updated user identifier."""
+  userId: Int
+
+  """Updated words per minute."""
+  wpm: Float
+}
+
+"""Input for updating a discussion."""
+input UpdateDiscussionInput {
+  """Updated body."""
+  body: String
+
+  """Updated excerpt."""
+  excerpt: String
+
+  """Updated title."""
+  title: String
+}
+
+"""Input for editing a discussion reply."""
+input UpdateDiscussionReplyInput {
+  """Updated reply text."""
+  text: String!
+}
+
+"""Input for updating a submitted quote."""
+input UpdateQuoteInput {
+  """Updated source attribution."""
+  source: String
+
+  """Updated quote text."""
+  text: String
+}
+
+"""Paginated user collection."""
+type UserPageType {
+  """Whether there is another page after the current one."""
+  hasNextPage: Boolean!
+
+  """Whether there is a page before the current one."""
+  hasPreviousPage: Boolean!
+
+  """Current page of users."""
+  items: [UserType!]!
+
+  """Page size."""
+  limit: Int!
+
+  """Current page number."""
+  page: Int!
+}
+
+"""Aggregate typing statistics for a user profile."""
+type UserStatsType {
+  """Average accuracy percentage."""
+  accuracy: Int!
+
+  """Number of discussions started."""
+  discussions: Int!
+
+  """Best recorded WPM."""
+  wpm: Int!
+}
+
+"""Public user profile."""
+type UserType {
+  """Optional user biography."""
+  bio: String
+
+  """Month and year when the user joined."""
+  joinedAt: String!
+
+  """Aggregate typing and participation statistics."""
+  stats: UserStatsType
+
+  """Public username."""
+  username: String!
+}
