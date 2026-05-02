@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   ParseIntPipe,
   Patch,
@@ -93,11 +94,11 @@ export class AttemptsApiController {
   }
 
   @ApiOperation({ summary: 'Delete an attempt' })
-  @ApiOkResponse({ type: AttemptDto })
   @ApiNoContentResponse({ description: 'Attempt deleted.' })
   @ApiNotFoundResponse({ description: 'Attempt was not found.' })
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.attemptsService.remove(id);
+  @HttpCode(204)
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    await this.attemptsService.remove(id);
   }
 }

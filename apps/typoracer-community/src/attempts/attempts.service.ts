@@ -12,6 +12,17 @@ import {
   UpdateAttempt,
 } from './entities/attempt.entity';
 
+interface DetailedAttempt {
+  id: number;
+  quoteId: number;
+  quoteText: string;
+  userId: number;
+  accuracy: number;
+  wpm: number;
+  maxRawWpm: number;
+  createdAt: string;
+}
+
 @Injectable()
 export class AttemptsService {
   constructor(
@@ -151,6 +162,73 @@ export class AttemptsService {
     return {
       items: mappedAttempts.slice(0, pagination.limit),
       hasNextPage: mappedAttempts.length > pagination.limit,
+    };
+  }
+
+  async findDetailedByUser(username: string): Promise<DetailedAttempt[]> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const attempts = await this.prisma.attempt.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        quote: {
+          select: {
+            text: true,
+          },
+        },
+      },
+    });
+
+    return attempts.map((attempt) => ({
+      id: attempt.id,
+      quoteId: attempt.quoteId,
+      quoteText: attempt.quote.text,
+      userId: attempt.userId,
+      accuracy: attempt.accuracy,
+      wpm: attempt.wpm,
+      maxRawWpm: attempt.maxRawWpm,
+      createdAt: attempt.createdAt.toISOString(),
+    }));
+  }
+
+  async findDetailedOne(id: number): Promise<DetailedAttempt> {
+    const attempt = await this.prisma.attempt.findUnique({
+      where: { id },
+      include: {
+        quote: {
+          select: {
+            text: true,
+          },
+        },
+      },
+    });
+
+    if (!attempt) {
+      throw new NotFoundException('Attempt not found.');
+    }
+
+    return {
+      id: attempt.id,
+      quoteId: attempt.quoteId,
+      quoteText: attempt.quote.text,
+      userId: attempt.userId,
+      accuracy: attempt.accuracy,
+      wpm: attempt.wpm,
+      maxRawWpm: attempt.maxRawWpm,
+      createdAt: attempt.createdAt.toISOString(),
     };
   }
 

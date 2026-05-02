@@ -4,6 +4,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  HttpCode,
   NotFoundException,
   Param,
   Patch,
@@ -127,6 +128,7 @@ export class UsersApiController {
   })
   @ApiNotFoundResponse({ description: 'User was not found.' })
   @Delete(':username')
+  @HttpCode(204)
   async remove(
     @Param('username') username: string,
     @Req() request: Request,
