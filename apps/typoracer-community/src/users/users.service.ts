@@ -12,6 +12,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { User, UserProfile } from './entities/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+interface UserLeaderboardEntry {
+  username: string;
+  wpm: number;
+  accuracy: number;
+}
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -99,6 +105,76 @@ export class UsersService {
         accuracy: Math.round(averageAccuracy),
         discussions: user._count.discussions,
       },
+    };
+  }
+
+  async findLeaderboard(): Promise<UserLeaderboardEntry[]>;
+  async findLeaderboard(
+    pagination: PaginationParams,
+  ): Promise<PaginatedResult<UserLeaderboardEntry>>;
+  async findLeaderboard(
+    pagination?: PaginationParams,
+  ): Promise<UserLeaderboardEntry[] | PaginatedResult<UserLeaderboardEntry>> {
+    const users = await this.prisma.user.findMany({
+      select: {
+        username: true,
+        attempts: {
+          where: {
+            quote: {
+              status: 'APPROVED',
+            },
+          },
+          select: {
+            accuracy: true,
+            wpm: true,
+          },
+        },
+      },
+    });
+
+    const leaderboard = users
+      .map((user) => {
+        const averageWpm =
+          user.attempts.length === 0
+            ? 0
+            : user.attempts.reduce((total, attempt) => total + attempt.wpm, 0) /
+              user.attempts.length;
+        const averageAccuracy =
+          user.attempts.length === 0
+            ? 0
+            : user.attempts.reduce(
+                (total, attempt) => total + attempt.accuracy,
+                0,
+              ) / user.attempts.length;
+
+        return {
+          username: user.username,
+          wpm: Math.round(averageWpm),
+          accuracy: Math.round(averageAccuracy),
+        };
+      })
+      .sort((left, right) => {
+        if (right.wpm !== left.wpm) {
+          return right.wpm - left.wpm;
+        }
+
+        if (right.accuracy !== left.accuracy) {
+          return right.accuracy - left.accuracy;
+        }
+
+        return left.username.localeCompare(right.username);
+      });
+
+    if (!pagination) {
+      return leaderboard;
+    }
+
+    const startIndex = (pagination.page - 1) * pagination.limit;
+    const endIndex = startIndex + pagination.limit;
+
+    return {
+      items: leaderboard.slice(startIndex, endIndex),
+      hasNextPage: endIndex < leaderboard.length,
     };
   }
 
