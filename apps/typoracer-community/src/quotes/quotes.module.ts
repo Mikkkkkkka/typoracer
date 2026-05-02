@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { QuoteResolver } from './quote.resolver';
 import { QuotesRecordsApiController } from './quotes-records-api.controller';
 import { QuotesRecordsService } from './quotes-records.service';
 import { QuotesApiController } from './quotes-api.controller';
@@ -14,7 +15,12 @@ import { QuotesService } from './quotes.service';
     QuotesController,
     QuotesRecordsApiController,
   ],
-  providers: [QuotesService, QuotesRecordsService, QuotesRecordsEventsService],
+  providers: [
+    QuotesService,
+    QuotesRecordsService,
+    QuotesRecordsEventsService,
+    QuoteResolver,
+  ],
   exports: [QuotesService, QuotesRecordsService, QuotesRecordsEventsService],
 })
 export class QuotesModule {}
