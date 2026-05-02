@@ -1,9 +1,12 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Inject, ForbiddenException, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import {
   PaginatedResult,
   PaginationParams,
 } from '../common/pagination/pagination.models';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 import { Quote, QuoteDetail } from './entities/quote.entity';
 import { QuotesRecordsService } from './quotes-records.service';
 
@@ -12,6 +15,8 @@ export class QuotesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly quoteRecordsService: QuotesRecordsService,
+    private readonly storageService: StorageService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   async findAll(): Promise<Quote[]>;
@@ -19,8 +24,19 @@ export class QuotesService {
   async findAll(
     pagination?: PaginationParams,
   ): Promise<PaginatedResult<Quote> | Quote[]> {
+    const cacheKey = pagination
+      ? `quotes:list:${pagination.page}:${pagination.limit}`
+      : 'quotes:list:all';
+    const cachedQuotes = await this.cacheManager.get<
+      PaginatedResult<Quote> | Quote[]
+    >(cacheKey);
+
+    if (cachedQuotes) {
+      return cachedQuotes;
+    }
+
     if (!pagination) {
-      return this.prisma.quote.findMany({
+      const quotes = await this.prisma.quote.findMany({
         where: { status: 'APPROVED' },
         orderBy: { id: 'asc' },
         select: {
@@ -30,6 +46,10 @@ export class QuotesService {
           text: true,
         },
       });
+
+      await this.cacheManager.set(cacheKey, quotes);
+
+      return quotes;
     }
 
     const quotes = await this.prisma.quote.findMany({
@@ -45,13 +65,24 @@ export class QuotesService {
       },
     });
 
-    return {
+    const result = {
       items: quotes.slice(0, pagination.limit),
       hasNextPage: quotes.length > pagination.limit,
     };
+
+    await this.cacheManager.set(cacheKey, result);
+
+    return result;
   }
 
   async findOne(quoteId: number): Promise<QuoteDetail | undefined> {
+    const cacheKey = `quotes:detail:${quoteId}`;
+    const cachedQuote = await this.cacheManager.get<QuoteDetail>(cacheKey);
+
+    if (cachedQuote) {
+      return cachedQuote;
+    }
+
     const quote = await this.prisma.quote.findFirst({
       where: {
         id: quoteId,
@@ -75,7 +106,7 @@ export class QuotesService {
       return undefined;
     }
 
-    return {
+    const result = {
       id: quote.id,
       image: quote.image,
       alt: quote.alt,
@@ -86,12 +117,18 @@ export class QuotesService {
       },
       records: await this.quoteRecordsService.findByQuote(quote.id),
     };
+
+    await this.cacheManager.set(cacheKey, result);
+
+    return result;
   }
 
   async submitQuote(input: {
     authorUsername: string;
     text: string;
     source?: string;
+    imageUrl?: string | null;
+    imageAlt?: string | null;
   }) {
     const author = await this.prisma.user.findFirst({
       where: {
@@ -113,8 +150,8 @@ export class QuotesService {
     const quote = await this.prisma.quote.create({
       data: {
         authorId: author.id,
-        image: null,
-        alt: source || 'Submitted quote',
+        image: input.imageUrl || null,
+        alt: input.imageAlt || source || 'Submitted quote',
         text: input.text.trim(),
         source,
         status: 'SUBMITTED',
@@ -127,6 +164,8 @@ export class QuotesService {
       },
     });
 
+    await this.invalidateQuoteCaches();
+
     return quote;
   }
 
@@ -136,6 +175,8 @@ export class QuotesService {
     input: {
       text?: string;
       source?: string;
+      imageUrl?: string | null;
+      imageAlt?: string | null;
     },
   ) {
     const quote = await this.prisma.quote.findUnique({
@@ -164,13 +205,21 @@ export class QuotesService {
 
     const source =
       input.source === undefined ? undefined : input.source.trim() || null;
+    const previousImage = await this.prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: { image: true },
+    });
     const updatedQuote = await this.prisma.quote.update({
       where: { id: quoteId },
       data: {
         text: input.text === undefined ? undefined : input.text.trim(),
         source,
+        image: input.imageUrl === undefined ? undefined : input.imageUrl,
         alt:
-          input.source === undefined ? undefined : source || 'Submitted quote',
+          input.imageAlt ??
+          (input.source === undefined
+            ? undefined
+            : source || 'Submitted quote'),
       },
       select: {
         id: true,
@@ -179,6 +228,16 @@ export class QuotesService {
         status: true,
       },
     });
+
+    if (
+      input.imageUrl &&
+      previousImage?.image &&
+      previousImage.image !== input.imageUrl
+    ) {
+      await this.storageService.deleteObjectByUrl(previousImage.image);
+    }
+
+    await this.invalidateQuoteCaches(quoteId);
 
     return updatedQuote;
   }
@@ -207,11 +266,35 @@ export class QuotesService {
       throw new ForbiddenException('You can only delete your own quotes.');
     }
 
+    const existingImage = await this.prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: { image: true },
+    });
+
     await this.prisma.quote.delete({
       where: { id: quoteId },
     });
 
+    await this.storageService.deleteObjectByUrl(existingImage?.image);
+    await this.invalidateQuoteCaches(quoteId);
+
     return true;
+  }
+
+  async uploadQuoteImage(file: {
+    buffer: Buffer;
+    mimeType: string;
+    originalName: string;
+  }) {
+    return this.storageService.uploadQuoteImage(file);
+  }
+
+  private async invalidateQuoteCaches(quoteId?: number) {
+    await this.cacheManager.del('quotes:list:all');
+
+    if (quoteId !== undefined) {
+      await this.cacheManager.del(`quotes:detail:${quoteId}`);
+    }
   }
 
   private formatLongDate(date: Date) {

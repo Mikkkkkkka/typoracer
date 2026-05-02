@@ -6,7 +6,8 @@
         </p>
     </section>
     <section class="page-section">
-        <form class="generic-form" id="quote-form" action="/api/quotes" method="post" onsubmit="return false;">
+        <form class="generic-form" id="quote-form" action="/api/quotes" method="post" enctype="multipart/form-data"
+              onsubmit="return false;">
             <div class="generic-form__container">
                 <label class="generic-form__label" for="quote-text">Quote text</label>
                 <textarea class="generic-form__textarea" id="quote-text" name="text"
@@ -14,6 +15,9 @@
                 <label class="generic-form__label" for="quote-source">Source (optional)</label>
                 <input class="generic-form__text-input" type="text" name="source" id="quote-source"
                        placeholder="Unknown" maxlength="100"/>
+                <label class="generic-form__label" for="quote-image">Image (optional)</label>
+                <input class="generic-form__text-input" type="file" name="image" id="quote-image"
+                       accept="image/png,image/jpeg,image/webp,image/gif"/>
                 <p class="generic-form__error" id="quote-form-error" role="alert" aria-live="polite">
                     Submitted quotes appear here after a successful request.
                 </p>
