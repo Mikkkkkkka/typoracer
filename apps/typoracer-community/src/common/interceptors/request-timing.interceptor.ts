@@ -106,16 +106,12 @@ export class RequestTimingInterceptor implements NestInterceptor {
 
   private shouldSetElapsedHeader(request: Request) {
     const path = this.getRequestPath(request);
-    return (
-      path.startsWith('/api') || path.startsWith('/graphql')
-    );
+    return path.startsWith('/api') || path.startsWith('/graphql');
   }
 
   private shouldAugmentRenderedModel(request: Request) {
     const path = this.getRequestPath(request);
-    return (
-      !path.startsWith('/api') && !path.startsWith('/graphql')
-    );
+    return !path.startsWith('/api') && !path.startsWith('/graphql');
   }
 
   private isViewModel(value: unknown): value is ViewModel {
