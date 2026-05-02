@@ -39,7 +39,7 @@ export class RequestTimingInterceptor implements NestInterceptor {
 
             if (request) {
               this.logger.log(
-                `${request.method} ${request.path} completed in ${elapsedMs.toFixed(2)}ms`,
+                `${request.method} ${this.getRequestPath(request)} completed in ${elapsedMs.toFixed(2)}ms`,
               );
             }
           },
@@ -97,7 +97,7 @@ export class RequestTimingInterceptor implements NestInterceptor {
         next: () => {
           const elapsedMs = performance.now() - startedAt;
           this.logger.log(
-            `${request.method} ${request.path} completed in ${elapsedMs.toFixed(2)}ms`,
+            `${request.method} ${this.getRequestPath(request)} completed in ${elapsedMs.toFixed(2)}ms`,
           );
         },
       }),
@@ -105,18 +105,24 @@ export class RequestTimingInterceptor implements NestInterceptor {
   }
 
   private shouldSetElapsedHeader(request: Request) {
+    const path = this.getRequestPath(request);
     return (
-      request.path.startsWith('/api') || request.path.startsWith('/graphql')
+      path.startsWith('/api') || path.startsWith('/graphql')
     );
   }
 
   private shouldAugmentRenderedModel(request: Request) {
+    const path = this.getRequestPath(request);
     return (
-      !request.path.startsWith('/api') && !request.path.startsWith('/graphql')
+      !path.startsWith('/api') && !path.startsWith('/graphql')
     );
   }
 
   private isViewModel(value: unknown): value is ViewModel {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private getRequestPath(request: Request | undefined) {
+    return request?.path ?? request?.url ?? '';
   }
 }

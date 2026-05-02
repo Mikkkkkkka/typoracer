@@ -11,6 +11,7 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import type { Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { PaginationArgs } from '../graphql/pagination.args';
@@ -84,36 +85,63 @@ class DiscussionPageType {
 
 @InputType({ description: 'Input for creating a discussion.' })
 class CreateDiscussionInput {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
   @Field(() => String, { description: 'Discussion title.' })
   title!: string;
 
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
   @Field(() => String, { description: 'Short list summary.' })
   excerpt!: string;
 
+  @IsString()
+  @MinLength(1)
+  @MaxLength(10000)
   @Field(() => String, { description: 'Full discussion body.' })
   body!: string;
 }
 
 @InputType({ description: 'Input for updating a discussion.' })
 class UpdateDiscussionInput {
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
   @Field(() => String, { nullable: true, description: 'Updated title.' })
   title?: string;
 
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
   @Field(() => String, { nullable: true, description: 'Updated excerpt.' })
   excerpt?: string;
 
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(10000)
   @Field(() => String, { nullable: true, description: 'Updated body.' })
   body?: string;
 }
 
 @InputType({ description: 'Input for posting a discussion reply.' })
 class CreateDiscussionReplyInput {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(5000)
   @Field(() => String, { description: 'Reply text.' })
   text!: string;
 }
 
 @InputType({ description: 'Input for editing a discussion reply.' })
 class UpdateDiscussionReplyInput {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(5000)
   @Field(() => String, { description: 'Updated reply text.' })
   text!: string;
 }

@@ -11,6 +11,7 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import type { Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { PaginationArgs } from '../graphql/pagination.args';
@@ -121,9 +122,16 @@ class QuoteSubmissionType {
 
 @InputType({ description: 'Input for submitting a quote for moderation.' })
 class SubmitQuoteInput {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(10000)
   @Field(() => String, { description: 'Quote text to submit.' })
   text!: string;
 
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
   @Field(() => String, {
     nullable: true,
     description: 'Optional source attribution.',
@@ -133,9 +141,17 @@ class SubmitQuoteInput {
 
 @InputType({ description: 'Input for updating a submitted quote.' })
 class UpdateQuoteInput {
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(10000)
   @Field(() => String, { nullable: true, description: 'Updated quote text.' })
   text?: string;
 
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
   @Field(() => String, {
     nullable: true,
     description: 'Updated source attribution.',

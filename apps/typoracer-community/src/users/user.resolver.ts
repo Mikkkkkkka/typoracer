@@ -24,6 +24,9 @@ class UserStatsType {
 
 @ObjectType({ description: 'Public user profile.' })
 class UserType {
+  @Field(() => Int, { description: 'User identifier.' })
+  id!: number;
+
   @Field(() => String, { description: 'Public username.' })
   username!: string;
 
