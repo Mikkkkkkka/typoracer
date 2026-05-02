@@ -1,97 +1,219 @@
-<p>
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Typoracer Community
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend-web application for a typing community. The project combines server-rendered pages and a REST API for user accounts, quotes, typing attempts, leaderboards, and forum discussions.
 
+## Deployed Application
 
-## Description
+- Production URL: `https://typoracer.mikkkkkkka.ru`
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Project Description
 
-## Project setup
+Typoracer Community is a web application in the typing practice domain. Users can create accounts, browse public quotes, submit new quotes for moderation, discuss typing-related topics on the forum, view user profiles, and compare typing results in leaderboards.
+
+The application is built as a NestJS server with:
+
+- server-side HTML rendering through EJS;
+- a REST API documented with Swagger;
+- PostgreSQL as the main relational database;
+- Prisma as the ORM and migration tool.
+
+## Domain Area
+
+The subject area is an online community built around typing practice and quote-based speed typing.
+
+The main user scenarios are:
+
+- registration and login;
+- viewing and editing a user profile;
+- browsing approved quotes;
+- submitting quotes for moderation;
+- storing typing attempts for quotes;
+- calculating leaderboards and quote-specific records;
+- creating discussions and replying to them.
+
+## Domain Entities
+
+The project currently выделяет следующие основные сущности:
+
+1. `User`
+   - Community member with account data, profile information, authored quotes, discussions, replies, and typing attempts.
+
+2. `Quote`
+   - Text used for typing practice. A quote has an author, source, optional image, and moderation status.
+
+3. `Attempt`
+   - Result of a typing session for a specific quote by a specific user, including `wpm`, `accuracy`, and `maxRawWpm`.
+
+4. `Discussion`
+   - Forum thread created by a user with title, excerpt, and full body text.
+
+5. `DiscussionReply`
+   - Reply posted by a user inside a discussion thread.
+
+6. `QuoteStatus`
+   - Enumeration describing the quote lifecycle: `SUBMITTED` or `APPROVED`.
+
+## ER Diagram
+
+The entity relationship diagram for the data model:
+
+![ER Diagram](docs/er-model.png)
+
+## Main Features
+
+- Authentication and session handling
+- User profiles with typing stats
+- Quote catalog
+- Quote submission for moderation
+- Typing attempts API
+- Quote records per user
+- Leaderboard by average WPM and accuracy
+- Forum discussions and replies
+- Swagger documentation at `/api/docs`
+
+## Technology Stack
+
+- Node.js
+- NestJS
+- TypeScript
+- EJS
+- PostgreSQL
+- Prisma
+- Swagger / OpenAPI
+- Docker / Docker Compose
+
+## Application Structure
+
+Key modules:
+
+- `src/auth` - authentication and current session
+- `src/users` - user profiles and leaderboard logic
+- `src/quotes` - quotes, records, quote submission
+- `src/attempts` - typing attempts
+- `src/discussions` - forum discussions and replies
+- `src/prisma` - Prisma infrastructure module
+- `src/pages` - page rendering controllers
+- `views` - EJS templates
+- `public` - static assets
+
+## Running Locally
+
+### 1. Install dependencies
 
 ```bash
-$ npm install
+npm install
 ```
 
-## Compile and run the project
+### 2. Configure environment
+
+Create an environment file and provide at least:
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/typoracer
+JWT_SECRET=development-jwt-secret
+PORT=3000
+```
+
+You can use the existing `.env.example` as a base.
+
+### 3. Start PostgreSQL
+
+With Docker Compose:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker compose up -d db
 ```
+
+Or start both the application and the database:
+
+```bash
+docker compose up -d
+```
+
+### 4. Apply migrations
+
+```bash
+npx prisma migrate deploy
+```
+
+For local development you can also use:
+
+```bash
+npx prisma migrate dev
+```
+
+### 5. Seed the database
+
+```bash
+npm run prisma:seed
+```
+
+### 6. Run the application
+
+Development mode:
+
+```bash
+npm run start:dev
+```
+
+Production mode:
+
+```bash
+npm run build
+npm run start:prod
+```
+
+After startup the application is available at:
+
+- `http://localhost:3000`
+- Swagger UI: `http://localhost:3000/api/docs`
 
 ## Docker
 
-This app can be containerized with the included `Dockerfile` and `compose.yaml`.
+Build image:
 
 ```bash
-# build the image
-$ docker build -t typoracer-community:local .
-
-# or build and run with Docker Compose
-$ docker compose up -d
+docker build -t typoracer-community:local .
 ```
 
-Docker uses the repository root as the build context and applies [`.dockerignore`](.dockerignore), so local dependencies, build output, logs, Git metadata, and environment files are not sent to the daemon. The container listens on port `3000`.
-
-## Run tests
+Run with Compose:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker compose up -d
 ```
 
-## Deployment
+Default local services:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- app: `localhost:3000`
+- postgres: `localhost:5432`
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## API
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+The project exposes a REST API for:
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- authentication;
+- users;
+- quotes;
+- quote records;
+- attempts;
+- discussions;
+- discussion replies.
 
-## Resources
+Swagger documentation is generated automatically and available at `/api/docs`.
 
-Check out a few resources that may come in handy when working with NestJS:
+## Database
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+The application uses PostgreSQL and Prisma migrations.
 
-## Support
+Important files:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- `prisma/schema.prisma`
+- `prisma/migrations/*`
+- `prisma/seed.ts`
 
-## Stay in touch
+## Notes
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- Only approved quotes are visible in the public quote catalog.
+- Quote records are recalculated from attempts and streamed to the quote detail page through Server-Sent Events.
+- The quote submission page also keeps a local client-side history of submitted items for convenience.
 
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
