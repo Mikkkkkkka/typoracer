@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
+  HttpCode,
   NotFoundException,
   Param,
   ParseIntPipe,
@@ -17,6 +19,7 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -135,6 +138,40 @@ export class QuotesApiController {
       }
 
       return quote;
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+
+      throw error;
+    }
+  }
+
+  @ApiOperation({ summary: 'Delete a submitted quote' })
+  @ApiBearerAuth()
+  @ApiNoContentResponse({ description: 'Quote deleted.' })
+  @ApiForbiddenResponse({
+    description: 'You can only delete your own quotes.',
+  })
+  @ApiNotFoundResponse({ description: 'Quote was not found.' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
+  @Delete(':quoteId')
+  @HttpCode(204)
+  async remove(
+    @Param('quoteId', ParseIntPipe) quoteId: number,
+    @Req() request: Request,
+  ) {
+    const currentUser = await this.authService.requireCurrentUser(request);
+
+    try {
+      const deleted = await this.quotesService.deleteQuote(
+        quoteId,
+        currentUser.username,
+      );
+
+      if (!deleted) {
+        throw new NotFoundException('Quote not found.');
+      }
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
