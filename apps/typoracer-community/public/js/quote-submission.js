@@ -6,6 +6,7 @@ const MAX_QUOTE_SOURCE_LENGTH = 100;
 const quoteForm = document.getElementById('quote-form');
 const quoteText = document.getElementById('quote-text');
 const quoteSource = document.getElementById('quote-source');
+const quoteImage = document.getElementById('quote-image');
 const submissionsTable = document.getElementById('quote-submissions');
 const submissionsTableBody = submissionsTable?.querySelector('tbody');
 const submissionRowTemplate = document.getElementById(
@@ -27,6 +28,7 @@ function initializeQuoteSubmissionPage() {
     !(quoteForm instanceof HTMLFormElement) ||
     !(quoteText instanceof HTMLTextAreaElement) ||
     !(quoteSource instanceof HTMLInputElement) ||
+    !(quoteImage instanceof HTMLInputElement) ||
     !(quoteFormError instanceof HTMLElement) ||
     !(submitButton instanceof HTMLButtonElement)
   ) {
@@ -64,18 +66,29 @@ async function handleFormSubmit(e) {
   updateSubmitButton(Boolean(editingId), true);
 
   try {
-    const response = await fetch(
-      editingId ? `/api/quotes/${encodeURIComponent(editingId)}` : '/api/quotes',
-      {
-        method: editingId ? 'PATCH' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(submissionInput),
-        credentials: 'same-origin',
-      },
-    );
+    const hasImage = quoteImage.files && quoteImage.files.length > 0;
+    const requestUrl = editingId
+      ? `/api/quotes/${encodeURIComponent(editingId)}`
+      : '/api/quotes';
+    const requestInit = hasImage
+      ? {
+          method: editingId ? 'PATCH' : 'POST',
+          headers: {
+            Accept: 'application/json',
+          },
+          body: formData,
+          credentials: 'same-origin',
+        }
+      : {
+          method: editingId ? 'PATCH' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify(submissionInput),
+          credentials: 'same-origin',
+        };
+    const response = await fetch(requestUrl, requestInit);
 
     const payload = await readJsonSafely(response);
 
@@ -273,6 +286,7 @@ function editSubmission(id) {
 
   quoteText.value = submission.text;
   quoteSource.value = submission.source === 'Unknown' ? '' : submission.source;
+  quoteImage.value = '';
 
   editingId = id;
 

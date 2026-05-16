@@ -3,5 +3,10 @@
         <a class="contacts__item" href="mailto:info@typoracer.ru">Email</a>
         <a class="contacts__item" href="https://github.com/Mikkkkkkka/typoracer">Source code</a>
     </div>
+    <p class="main-footer__load-metrics" id="server-load-metrics">
+        <% if (typeof serverElapsedTime === 'string') { %>
+            Server render time: <%= serverElapsedTime %>
+        <% } %>
+    </p>
     <p class="main-footer__load-metrics" id="load-metrics"></p>
 </footer>

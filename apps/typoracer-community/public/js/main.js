@@ -10,7 +10,7 @@ function renderLoadMetrics() {
   const load_metrics = this.document.getElementById('load-metrics');
 
   if (load_metrics) {
-    load_metrics.textContent = `Time to load page: ${time_load} с.`;
+    load_metrics.textContent = `Client load time: ${time_load.toFixed(2)} s.`;
   }
 }
 

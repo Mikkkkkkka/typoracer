@@ -9,6 +9,7 @@ import {
   Query,
   Resolver,
 } from '@nestjs/graphql';
+import { IsInt, IsNumber, IsOptional } from 'class-validator';
 import { PaginationArgs } from '../graphql/pagination.args';
 import { AttemptsService } from './attempts.service';
 
@@ -69,18 +70,24 @@ class AttemptPageType {
 
 @InputType({ description: 'Input for creating a typing attempt.' })
 class CreateAttemptInput {
+  @IsInt()
   @Field(() => Int, { description: 'Related quote identifier.' })
   quoteId!: number;
 
+  @IsInt()
   @Field(() => Int, { description: 'User identifier.' })
   userId!: number;
 
+  @IsNumber()
   @Field(() => Float, { description: 'Accuracy percentage.' })
   accuracy!: number;
 
+  @IsNumber()
   @Field(() => Float, { description: 'Words per minute.' })
   wpm!: number;
 
+  @IsOptional()
+  @IsNumber()
   @Field(() => Float, {
     nullable: true,
     description: 'Optional max raw WPM value.',
@@ -90,27 +97,37 @@ class CreateAttemptInput {
 
 @InputType({ description: 'Input for updating an attempt.' })
 class UpdateAttemptInput {
+  @IsOptional()
+  @IsInt()
   @Field(() => Int, {
     nullable: true,
     description: 'Updated quote identifier.',
   })
   quoteId?: number;
 
+  @IsOptional()
+  @IsInt()
   @Field(() => Int, { nullable: true, description: 'Updated user identifier.' })
   userId?: number;
 
+  @IsOptional()
+  @IsNumber()
   @Field(() => Float, {
     nullable: true,
     description: 'Updated accuracy percentage.',
   })
   accuracy?: number;
 
+  @IsOptional()
+  @IsNumber()
   @Field(() => Float, {
     nullable: true,
     description: 'Updated words per minute.',
   })
   wpm?: number;
 
+  @IsOptional()
+  @IsNumber()
   @Field(() => Float, {
     nullable: true,
     description: 'Updated max raw WPM.',

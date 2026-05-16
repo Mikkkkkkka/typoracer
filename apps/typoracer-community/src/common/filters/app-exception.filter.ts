@@ -11,18 +11,23 @@ import { Request, Response } from 'express';
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const request = ctx.getRequest<Request>();
-    const response = ctx.getResponse<Response>();
+    if (host.getType<'http' | 'graphql'>() === 'graphql') {
+      throw exception;
+    }
 
-    const isApiRequest = request.path.startsWith('/api');
+    const ctx = host.switchToHttp();
+    const request = ctx.getRequest<Request | undefined>();
+    const response = ctx.getResponse<Response>();
+    const requestPath = request?.path ?? '';
+
+    const isApiRequest = requestPath.startsWith('/api');
     const { status, message } = this.mapException(exception);
 
     if (isApiRequest) {
       response.status(status).json({
         statusCode: status,
         message,
-        path: request.path,
+        path: requestPath,
         timestamp: new Date().toISOString(),
       });
       return;

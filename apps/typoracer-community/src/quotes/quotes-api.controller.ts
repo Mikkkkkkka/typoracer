@@ -1,4 +1,5 @@
 import {
+  Header,
   Body,
   Controller,
   Delete,
@@ -13,10 +14,14 @@ import {
   Query,
   Req,
   Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNoContentResponse,
@@ -27,16 +32,24 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { buildPaginationLinkHeader } from '../common/pagination/pagination-links';
+import { CreateQuoteSubmissionFormDataDto } from './dto/create-quote-submission-form-data.dto';
 import { CreateQuoteSubmissionDto } from './dto/create-quote-submission.dto';
 import { QuoteDetailDto } from './dto/quote-detail.dto';
 import { QuoteSubmissionResponseDto } from './dto/quote-submission-response.dto';
 import { QuoteSummaryDto } from './dto/quote-summary.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { QuotesService } from './quotes.service';
+
+type UploadedImageFile = {
+  buffer: Buffer;
+  mimetype: string;
+  originalname: string;
+};
 
 @ApiTags('quotes')
 @Controller('api/quotes')
@@ -50,6 +63,7 @@ export class QuotesApiController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ type: QuoteSummaryDto, isArray: true })
+  @Header('Cache-Control', 'public, max-age=3600, must-revalidate')
   @Get()
   async findAll(
     @Query() pagination: PaginationQueryDto,
@@ -72,20 +86,33 @@ export class QuotesApiController {
 
   @ApiOperation({ summary: 'Submit a quote for moderation' })
   @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data', 'application/json')
   @ApiCreatedResponse({ type: QuoteSubmissionResponseDto })
+  @ApiBody({ type: CreateQuoteSubmissionFormDataDto })
   @ApiBadRequestResponse({ description: 'Invalid quote payload.' })
   @ApiNotFoundResponse({ description: 'Author was not found.' })
   @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
   @Post()
+  @UseInterceptors(FileInterceptor('image'))
   async create(
     @Body() body: CreateQuoteSubmissionDto,
     @Req() request: Request,
+    @UploadedFile() image?: UploadedImageFile,
   ) {
     const currentUser = await this.authService.requireCurrentUser(request);
+    const uploadedImage = image
+      ? await this.quotesService.uploadQuoteImage({
+          buffer: image.buffer,
+          mimeType: image.mimetype,
+          originalName: image.originalname,
+        })
+      : null;
     const quote = await this.quotesService.submitQuote({
       authorUsername: currentUser.username,
       text: body.text,
       source: body.source,
+      imageUrl: uploadedImage?.url ?? null,
+      imageAlt: body.source || image?.originalname || 'Submitted quote',
     });
 
     if (!quote) {
@@ -98,6 +125,7 @@ export class QuotesApiController {
   @ApiOperation({ summary: 'Get quote details with records' })
   @ApiOkResponse({ type: QuoteDetailDto })
   @ApiNotFoundResponse({ description: 'Quote was not found.' })
+  @Header('Cache-Control', 'public, max-age=3600, must-revalidate')
   @Get(':quoteId')
   async findOne(@Param('quoteId', ParseIntPipe) quoteId: number) {
     const quote = await this.quotesService.findOne(quoteId);
@@ -111,6 +139,7 @@ export class QuotesApiController {
 
   @ApiOperation({ summary: 'Update a submitted quote' })
   @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data', 'application/json')
   @ApiOkResponse({ type: QuoteSubmissionResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid quote payload.' })
   @ApiForbiddenResponse({
@@ -119,18 +148,33 @@ export class QuotesApiController {
   @ApiNotFoundResponse({ description: 'Quote was not found.' })
   @ApiUnauthorizedResponse({ description: 'Authentication is required.' })
   @Patch(':quoteId')
+  @UseInterceptors(FileInterceptor('image'))
   async update(
     @Param('quoteId', ParseIntPipe) quoteId: number,
     @Body() body: UpdateQuoteDto,
     @Req() request: Request,
+    @UploadedFile() image?: UploadedImageFile,
   ) {
     const currentUser = await this.authService.requireCurrentUser(request);
+    const uploadedImage = image
+      ? await this.quotesService.uploadQuoteImage({
+          buffer: image.buffer,
+          mimeType: image.mimetype,
+          originalName: image.originalname,
+        })
+      : null;
 
     try {
       const quote = await this.quotesService.updateQuote(
         quoteId,
         currentUser.username,
-        body,
+        {
+          ...body,
+          imageUrl: uploadedImage?.url,
+          imageAlt: image
+            ? body.source || image.originalname || 'Submitted quote'
+            : undefined,
+        },
       );
 
       if (!quote) {

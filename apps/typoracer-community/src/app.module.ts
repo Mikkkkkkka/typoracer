@@ -1,9 +1,13 @@
+import { CacheModule } from '@nestjs/cache-manager';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { Module } from '@nestjs/common';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { AuthModule } from './auth/auth.module';
 import { DiscussionsModule } from './discussions/discussions.module';
 import { GraphQLModule } from '@nestjs/graphql';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
+import { EtagInterceptor } from './common/interceptors/etag.interceptor';
+import { RequestTimingInterceptor } from './common/interceptors/request-timing.interceptor';
 import { PagesModule } from './pages/pages.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QuotesModule } from './quotes/quotes.module';
@@ -15,6 +19,10 @@ import { join } from 'path';
 @Module({
   imports: [
     PrismaModule,
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 5,
+    }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       path: '/graphql',
@@ -22,7 +30,10 @@ import { join } from 'path';
       sortSchema: true,
       playground: true,
       introspection: true,
-      context: ({ req }: { req: Request }) => ({ req }),
+      context: ({ req, res }: { req: Request; res: Response }) => ({
+        req,
+        res,
+      }),
       plugins: [createComplexityPlugin(200)],
     }),
     AuthModule,
@@ -33,6 +44,15 @@ import { join } from 'path';
     PagesModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RequestTimingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: EtagInterceptor,
+    },
+  ],
 })
 export class AppModule {}

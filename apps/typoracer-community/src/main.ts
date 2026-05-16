@@ -12,6 +12,11 @@ import layouts from 'express-ejs-layouts';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
+
   const publicPath = join(__dirname, '..', 'public');
   const viewsPath = join(__dirname, '..', 'views');
 

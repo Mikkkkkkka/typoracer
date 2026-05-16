@@ -35,6 +35,7 @@ export class UsersService {
       skip: pagination ? (pagination.page - 1) * pagination.limit : undefined,
       take: pagination ? pagination.limit + 1 : undefined,
       select: {
+        id: true,
         username: true,
         joinedAt: true,
         bio: true,
@@ -42,6 +43,7 @@ export class UsersService {
     });
 
     const mappedUsers = users.map((user) => ({
+      id: user.id,
       username: user.username,
       joinedAt: this.formatMonthYear(user.joinedAt),
       bio: user.bio,
@@ -97,6 +99,7 @@ export class UsersService {
           ) / user.attempts.length;
 
     return {
+      id: user.id,
       username: user.username,
       joinedAt: this.formatMonthYear(user.joinedAt),
       bio: user.bio,
